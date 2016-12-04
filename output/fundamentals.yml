@@ -1,0 +1,609 @@
+header:
+    author: Rackspace and Ansible
+    description: Ansible Fundamentals
+    title: Ansible Fundamentals
+slides:
+-   set_global:
+        transition: none
+-   -   nested:
+        -   -   h1: Ansible Fundamentals
+        -   -   h1: Audio and Chat
+            -   p: 'Chat: #ansible-training on FreeNode (http://freenode.net/)'
+            -   p: ''
+            -   p: 'Audio: click on the Join.me phone icon and follow directions.'
+-   set_global:
+        background: '#007777'
+        transition: none
+-   -   nested:
+        -   -   h1: What is Ansible?
+            -   ul:
+                - Clear
+                - Fast
+                - Complete
+                - Efficient
+                - Secure
+        -   -   h2: Clear
+            -   p: 'A simple automation language allows Ansible to be used by anyone:'
+            -   ul:
+                - sysadmins
+                - developers
+                - IT managers
+            -   p: It's easy to write, read, maintain, and evolve - without writing
+                    scripts or custom code.
+        -   -   h2: Fast
+            -   p: Ansible is easy to learn.
+            -   p: Setup is fast.
+            -   class_notes: '1. You can automate in under 30 minutes. Forget about
+                    how it works, just do it.
+
+                    2. No agents. SSH keys are typically already in place.
+
+                    '
+        -   -   h2: Complete
+            -   p: 'Ansible is several tools in one:'
+            -   ul:
+                - configuration management
+                - application deployment
+                - orchestration
+                - provisioning
+            -   p: Hundreds of built-in modules.
+        -   -   h2: Efficient
+            -   p: Ansible doesn't require a custom agent or software to install.
+            -   p: Ansible runs on OpenSSH.
+            -   class_notes: '1. With no additional software infrastructure, you don''t
+                    have to
+
+                    worry about managing the management tool.
+
+                    2. That means anywhere SSH goes, Ansible goes.
+
+                    3. It doesn''t suck memory or CPU resources when it is not in
+                    use.
+
+                    4. Designed from day one to automate no-downtime rolling updates
+
+                    and multi-tier orchestration.
+
+                    '
+        -   -   h2: Secure
+            -   p: No agent.
+            -   p: SSH transport.
+            -   p: Ansible plays can be read by anyone.
+            -   class_notes: '1. It doesn''t need additional ports or root level daemons.
+
+                    2. It uses built-in OS authentication for better security - login
+
+                    as who you are, sudo if you want to sudo.
+
+                    3. You can work with tools like Kerberos, LDAP, and sssd.
+
+                    4. OpenSSH is the most peer-reviewed security component around.
+
+                    5. This makes it auditable. You know what you''re automating,
+
+                    and bugs have nowhere to hide.
+
+                    '
+-   set_global:
+        transition: none
+-   -   nested:
+        -   -   h1: Ansible Use Cases
+            -   p: Ask not what you can do for Ansible, but what Ansible can do for
+                    you!
+        -   -   h2: Ansible Use Cases
+            -   ul:
+                - Remote Execution / Ad-hoc Tasks
+                - Configuration Management
+                - Application Deployment & Orchestration
+                - Provisioning Infrastructure Dynamically
+        -   -   h2: Remote Execution
+            -   ul:
+                - Replacement for traditional systems administration tasks. (i.e.,
+                    SSH)
+                - Checking system responsiveness and uptime.
+                - Gathering information about a collection of systems.
+                - Replace one off rsync scripts, fabric, or terminal multiplexing.
+            -   class_notes: "Ansible provides a command-line tool and framework capable\
+                    \ of \nexecuting over a large number of hosts, eliminating the\
+                    \ need for \nsystems administrators to multiplex terminal sessions\
+                    \ via SSH to \nexecute concurrent tasks across multiple hosts.\
+                    \  What may have \nbeen done in bash scripts, rsync scripts, etc.\
+                    \ can be done via \nad-hoc one-liners in the shell.\n"
+        -   -   h2: Remote Execution
+            -   code: 'ansible -m user -a "name=bob state=present" webservers
+
+                    '
+            -   code: 'ansible -m apt -a "pkg=apache2 state=present" webservers
+
+                    '
+            -   class_notes: "Example 1 is adding a user to all the systems defined\
+                    \ in the \nwebservers group. Example 2 is installing the apache2\
+                    \ package \non all systems defined in the webservers group.\n"
+        -   -   h2: Config Management
+            -   ul:
+                - Lengthy system configuration, to include adding users, ssh keys,
+                    installing and configuring services, and bootstrapping systems
+                    to a given state.
+                - '"Configuration remediation" Consistent server configuration. Removes
+                    manual configuration errors.'
+            -   class_notes: "Servers need to be configured; Ansible configures servers.\
+                    \  \nUsing a combination of imperative and declarative syntax\
+                    \ \n[described in detail--maybe using the GPS analogy], using\
+                    \ \nconcepts such as tasks, roles, plays, and playbooks, complex\
+                    \ \nmachine configurations are being assembled and converged by\
+                    \ \nthe Ansible toolchain rather than manually by administrators.\
+                    \  \nConfiguration is either set manually by the author or dynamically\
+                    \ at runtime by Ansible, resulting in consistent configuration\
+                    \ across large server sets.\n"
+        -   -   h2: Application Deployment & Orchestration
+            -   p: Ansible can be used to replace various deployment and orchestration
+                    tools.
+            -   ul:
+                - Deploy your custom application.
+                - Replacement for Capistrano and Fabric (i.e., git deployments)
+                - Good for large, complex environments
+        -   -   h2: Application Deployment & Orchestration
+            -   p: Application deployment includes two main schools of thought.
+            -   h2: Rolling Release
+                ul:
+                - Remove node from production, update components, and put back into
+                    rotation.
+            -   class_notes: "Make the point that you deploy often in the DevOps world,\
+                    \ and \nwhy this is important for application development.\n"
+        -   -   h2: Application Deployment & Orchestration
+            -   p: Application deployment includes two main schools of thought.
+            -   h2: Fresh Start
+            -   ul:
+                - Deploy entirely new infrastructure and replace current environment
+                    wholesale.
+            -   class_notes: "Make the point that you deploy often in the DevOps world,\
+                    \ and \nwhy this is important for application development.\n"
+        -   -   h2: Provisioning Infrastructure Dynamically
+            -   ul:
+                - Infrastructure is Data.
+                - You can provision to various clouds.
+                - Dynamic Inventory plugins for various providers (Rackspace, Amazon,
+                    Digital Ocean, OpenStack, Eucalyptus etc.)
+            -   class_notes: "Cover the various ways that infrastructure can be provisioned\
+                    \ \nusing Ansible. Mention that there are modules that provide\
+                    \ \nhe ability to deploy to various clouds. Include a high level\
+                    \ \noverview of the dynamic inventory plugin system. (Creating\
+                    \ \nInfrastructure is the same as Configuring Infrastructure.)\n"
+        -   -   h2: Who is your Ansible, and what does he do?
+            -   class_notes: "Have the class search the ansible documention and come\
+                    \ up \nwith something that Ansible does. Be that a specific module,\
+                    \ \nor a high level concept.\n"
+-   set_global:
+        transition: none
+-   -   nested:
+        -   -   h1: Ansible Key Components
+            -   p: What makes Ansible tick!
+            -   class_notes: Let's delve into the concepts that drive Ansible.
+        -   -   h2: Key components of Ansible
+            -   ul:
+                - Inventory
+                - Modules/Tasks
+                - Plays
+                - Playbooks
+            -   class_notes: These are some very key components you'll need to understand
+                    for using Ansible.
+        -   -   h2: Inventory
+            -   ul:
+                - Understanding Hosts and Groups
+                - Inventory Sources
+            -   class_notes: 'Ansible works against multiple systems in your infrastructure
+
+                    at the same time. It does this by selecting portions of systems
+
+                    listed in Ansible''s inventory.
+
+                    '
+        -   -   h2: Inventory concepts
+            -   ul:
+                - hosts
+                - groupings
+                - inventory-specific data
+                - static or dynamic sources
+            -   class_notes: Breaking down by topic, we'll cover four parts (Note
+                    the listed)
+        -   -   h2: 'Inventory: Hosts'
+            -   p: 'Hosts can have Ansible specific attributes such as:'
+            -   ul:
+                - Connection IP addresses and ports
+                - Remote user and sudo user
+                - Connection types (Paramiko, OpenSSH, local, etc.)
+                - Further limit targetd hosts using --limit
+            -   class_notes: "You have a lot of flexibility when you specify hosts\
+                    \ in Inventory. You can\nset variables to determine connection\
+                    \ types, host ip addresses and fully-qualified\ndomain names,\
+                    \ remote users and sudo users as well as any other variable you\
+                    \ may \ncome up with to use when interacting with your hosts,\
+                    \ such as \"apache_port\" or \n\"mysql ports\".\n"
+        -   -   h2: 'Inventory: Hosts'
+            -   p: 'This is an example of a host entry in an inventory file:'
+            -   code: 'web1.example.com ansible_ssh_port=5555 ansible_ssh_host=192.168.1.50
+
+                    '
+            -   class_notes: As you can see, we have a host name, a specified SSH
+                    port and IP Address.
+        -   -   h2: 'Inventory: Host Entries Using Ranges'
+            -   p: 'You can have ranges of machine names or letters like this:'
+            -   code: 'www[01:50].example.com ansible_ssh_port=5555
+
+                    db-[a-f].example.com ansible_ssh_port=5555
+
+                    '
+            -   class_notes: Here we see that we can bracket a range of alpha-numeric
+                    characters to shorten our entries in the file.
+        -   -   h2: 'Inventory: Groups'
+            -   p: 'Inventory Host Organization: Groups'
+            -   ul:
+                - Groups allow targeted operations against different types of hosts.
+                - Groups can also have variables that apply to all hosts within them.
+                - --limit allows you to specify only certain groups to act against
+                - Hosts can exist in more than one group at once.
+            -   class_notes: 'We can also act against groups of hosts in a similar
+                    manner to single hosts.
+
+                    This allows you to also have standard settings for lots of similar
+                    hosts, such
+
+                    as a standard set of ports for apache on all web servers. You
+                    can limit the execution of
+
+                    Ansible jobs just as you can single hosts with the "--limit" option.
+                    Hosts can exist
+
+                    in more than one group at once, letting you do interesting operations
+                    on the intersections
+
+                    of groups. For example, target all of the east coast web servers.
+
+                    '
+        -   -   h2: 'Inventory: Groups'
+            -   p: Groups are represented in brackets above host lists in the inventory
+                    file.
+            -   code: "[webservers]\nwww[01:50].example.com ansible_ssh_port=5555\
+                    \ \n"
+            -   class_notes: This is an example of a range of hosts specified via
+                    the bracket nomenclature.
+        -   -   h2: 'Dynamic Inventory: Ansible and the Cloud'
+            -   p: 'Inventory can also be gathered on demand from other sources dynamically.  Those
+                    sources include:'
+            -   ul:
+                - Cloud API (Rackspace, Amazon, Digital Ocean, OpenStack, Eucalyptus
+                    etc.)
+                - Cobbler
+                - Create your own for fun and profit!
+            -   class_notes: "So we can also take inventory from a wide variety of\
+                    \ sources on the fly.  We can touch Rackspace, \nOpenstack, Amazon\
+                    \ EC2, Digital Ocean, and other provisioning systems like Cobbler.\
+                    \  You can also\ncreate your own inventory module to interface\
+                    \ with any custom CMDB systems you may have.\n"
+        -   -   h2: 'Inventory: Ansible and the Cloud'
+            -   p: Dynamic inventories also respect groups and other details.
+            -   ul:
+                - Groups are auto-determined by instance tags, regions and other attributes.
+                - Dynamic Inventories can be used alongside Static Inventories for
+                    a hybrid cloud approach.
+            -   class_notes: "Tagged instances automatically are put in a group based\
+                    \ on that tag.  Other attributes also \nbecome groups, such as\
+                    \ regions deployed to, or other custom attributes.\n"
+        -   -   h2: Tasks and Modules
+            -   p: Tasks and Modules are the workhorse of Ansible.
+            -   p: 'This topic will cover:'
+            -   ul:
+                - Understanding what a task is
+                - Understanding how tasks make use of modules
+        -   -   h2: Tasks
+            -   p: A task is a discrete action that is a declaration about the state
+                    of a system.
+            -   p: 'Example Tasks:'
+            -   ul:
+                - Directory should exist
+                - Package should be installed
+                - Service should be running
+                - Cloud Instance should exist
+            -   class_notes: These are examples of declarative tasks where the beginning
+                    state is disregarded in favor of ensuring end-state.
+        -   -   h2: 'Tasks: Examples'
+            -   p: ansible can execute single tasks on sets of hosts to fullfill an
+                    ad-hoc declarations
+            -   code: '$ ansible web-hosts -m file -a "path=/opt/cache state=directory"
+
+                    $ ansible web-hosts -m yum -a "name=nginx state=present"
+
+                    $ ansible web-hosts -m service -a "name=nginx enabled=yes state=started"
+
+                    '
+            -   class_notes: "in the first we make sure opt/cache exists, the second\
+                    \ we install nginx, third we make \nsure nginx is installed, chkconfig'ed\
+                    \ on and the service is started.\n"
+        -   -   h2: 'Tasks: Sources'
+            -   p: 'Code for tasks can come from:'
+            -   ul:
+                - existing modules
+                - custom modules
+                - raw ssh commands
+            -   class_notes: "Tasks use modules or commands to create their actions\
+                    \ to apply to remote systems. \nYou can create your own modules,\
+                    \ use any of the over 200 included modules, or use the output\
+                    \ from commands.\n"
+        -   -   h2: Modules
+            -   p: Modules are the bits of code copied to the target system to be
+                    executed to satisfy the task declaration.
+            -   p: 'Key points:'
+            -   ul:
+                - Code need not exist on remote host -- ansible copies it over
+                - Many modules come with Ansible -- "batteries included"
+                - Custom modules can be developed easily
+                - command/shell modules exists for simple commands
+                - script module exists for using existing code
+                - raw module exists for executing raw commands over ssh
+            -   class_notes: "Modules essentially create python code out of the descriptions\
+                    \ given via the tasks that are then sent to the \nremote machine\
+                    \ and interpreted/executed by that host. Once executed, Ansible\
+                    \ then cleans up after itself and \nremoves the module and output\
+                    \ from the remote system.\n"
+        -   -   h2: Module Interactions
+            -   p: Module listing and documentation via ansible-doc
+            -   code: '$ ansible-doc -l
+
+                    acl                  Sets and retrieves file ACL information.
+
+                    apt                  Manages apt-packages
+
+                    '
+            -   code: "$ ansible-doc acl\n> ACL\n\n  Sets and retrieves file ACL information.\n\
+                    \n  Options (= is mandatory):\n\n  - entry\n          The acl\
+                    \ to set or remove.  This must always be quoted in the [...]\n"
+            -   class_notes: "Modules and tasks represent the core function of ansible.\
+                    \ Modules are capable of idempotence -- \ncan be ran successively\
+                    \ and understand change vs no change. In these examples we see\
+                    \ how to use\nthe command \"ansible-doc\" to review informtaion\
+                    \ about specific modules that are included.\n"
+        -   -   h2: Module Interactions in Tasks
+            -   p: A series of tasks
+            -   code: "- name: add cache dir\n  file: path=/opt/cache state=directory\n\
+                    \n- name: install nginx\n  yum: name=nginx state=present\n\n-\
+                    \ name: start nginx\n  service: name=nginx enabled=yes state=started\n"
+            -   class_notes: 'An ordered series of tasks can be described to form
+                    plays.  Tasks utilize modules to act upon remote hosts.
+
+                    '
+        -   -   h2: Plays
+            -   p: Plays are ordered sets of tasks to execute against host selections
+                    from your inventory.
+            -   p: 'This topic will cover:'
+            -   ul:
+                - play naming
+                - hosts selection
+                - play arguments
+                - variables
+                - tasks
+                - concurrency and order of operations
+                - conditionals
+                - error handling
+                - inclusions
+        -   -   h2: Play Naming
+            -   code: '- name: This is a Play
+
+                    '
+            -   class_notes: General best practices are to name tasks in a way that
+                    shows what they do.
+        -   -   h2: Hosts Selection
+            -   code: "- name: This is a Play\n  hosts: web-servers\n"
+            -   class_notes: This is how we specify in a play/plabook what hosts we
+                    will act upon based on group.
+        -   -   h2: Play Arguments
+            -   code: "- name: This is a Play\n  hosts: web-servers\n  remote_user:\
+                    \ fred\n  sudo: yes\n  connection: ssh\n"
+            -   class_notes: "Furthermore, we can specify other variables as arguments.\
+                    \  \nSuch as what remote user to connect as, or whether we sudo\
+                    \ to root to complete our task.\n"
+        -   -   h2: Variables
+            -   code: "- name: This is a Play\n  hosts: web-servers\n  remote_user:\
+                    \ fred\n  sudo: yes\n  connection: ssh\n  vars:\n    http_port:\
+                    \ 80\n    cache_dir: /opt/cache\n"
+            -   class_notes: 'We gather facts before every run from hosts we are acting
+                    on.  Facts become variables that
+
+                    contain information such as kernel level, host name, ip addresses
+                    and other standard information.
+
+                    '
+        -   -   h2: Tasks
+            -   code: "- name: This is a Play\n  hosts: web-servers\n  remote_user:\
+                    \ fred\n  sudo: yes\n  connection: ssh\n  gather_facts: no\n \
+                    \ vars:\n    http_port: 80\n    cache_dir: /opt/cache\n\n  tasks:\n\
+                    \    - name: create cache dir\n      file: path={{ cache_dir }}\
+                    \ state=directory\n\n    - name: install nginx\n      yum: name=nginx\
+                    \ state=installed\n"
+            -   class_notes: 'This is a compelte example of a play within a playbook.  It
+                    contains arguments, variables,
+
+                    host groups to act on, two tasks and wheteher we use sudo on those
+                    tasks.  It also uses the variables
+
+                    specified for the cache directory.  Variables are represented
+                    in the Jinja2 format with double curly braces.
+
+                    '
+        -   -   h2: Concurrency and Order of Operations
+            -   code: "- name: This is a Play\n  hosts: web-servers\n  remote_user:\
+                    \ fred\n  sudo: yes\n  connection: ssh\n  vars:\n    http_port:\
+                    \ 80\n    cache_dir: /opt/cache\n\n  tasks:\n    - name: create\
+                    \ cache dir\n      file: path={{ cache_dir }} state=directory\n\
+                    \n    - name: install nginx\n      yum: name=nginx state=installed\n"
+            -   class_notes: "You can specify number of concurrent machines to act\
+                    \ upon via setting a number of forks.  That will act upon \nthat\
+                    \ number of hosts at once, however the tasks within the play complete\
+                    \ from top to botton, in order, one at a time.\n"
+        -   -   h2: Conditionals
+            -   code: "- name: This is a Play\n  hosts: web-servers\n  remote_user:\
+                    \ fred\n  sudo: yes\n  connection: ssh\n  vars:\n    http_port:\
+                    \ 80\n    cache_dir: /opt/cache\n\n  tasks:\n    - name: create\
+                    \ cache dir\n      file: path={{ cache_dir }} state=directory\n\
+                    \n    - name: install nginx\n      yum: name=httpd state=installed\n\
+                    \      when: ansible_os_family == \"RedHat\"\n\n    - name: install\
+                    \ nginx\n      apt: pkg=apache2 state=installed\n      when: ansible_os_family\
+                    \ == \"Debian\"\n"
+            -   class_notes: 'This is an example of a conditional. Conditionals allow
+                    for actions to be dependant on some fact or variable set.
+
+                    In this case, we see that we install nginx via Linux-Distro specific
+                    package managers. The variable "ansible_os_family"
+
+                    is a discovered fact gathered when we first run the play or playbook
+                    against hosts.
+
+                    '
+        -   -   h2: Error Handling
+            -   code: "- name: This is a Play\n  hosts: web-servers\n  remote_user:\
+                    \ fred\n  sudo: yes\n  connection: ssh\n  vars:\n    http_port:\
+                    \ 80\n    cache_dir: /opt/cache\n\n  tasks:\n    - name: create\
+                    \ cache dir\n      file: path={{ cache_dir }} state=directory\n\
+                    \n    - name: install nginx\n      yum: name=httpd state=installed\n\
+                    \      when: ansible_os_family == \"RedHat\"\n\n    - name: install\
+                    \ nginx\n      apt: pkg=apache2 state=installed\n      when: ansible_os_family\
+                    \ == \"Debian\"\n\n    - name: failing command\n      command:\
+                    \ /bin/fail\n      ignore_errors: yes\n"
+            -   class_notes: 'In this example we see the use of the "ignore_errors"
+                    setting, allowing users to dictate to ansible
+
+                    to ignore when the return codes of ansible-initiated tasks indicate
+                    failures or errors.  Another way
+
+                    to do this is by using the "failed_when" options.
+
+                    '
+        -   -   h2: Inclusions
+            -   code: "- name: This is a Play\n  hosts: web-servers\n  remote_user:\
+                    \ fred\n  sudo: yes\n  connection: ssh\n  vars_files:\n    - vars/nginx.yaml\n\
+                    \n  tasks:\n    - name: create cache dir\n      file: path={{\
+                    \ cache_dir }} state=directory\n\n    - include: tasks/install-apache.yaml\n\
+                    \n    - name: failing command\n      command: /bin/fail\n    \
+                    \  ignore_errors: yes\n"
+            -   class_notes: "Take note of the \"include\" task: This allows us to\
+                    \ include other playbooks at specific points in our\nrun allowing\
+                    \ for complicated aspects of orchestration to be seamless based\
+                    \ on function or type of \nplaybook.  While this is useful, most\
+                    \ often now you will use Roles for this functionality.  We'll\
+                    \ talk\nmore about those in a bit.\n"
+        -   -   h2: Playbooks
+            -   p: Playbooks are ordered sets of plays to execute against inventory
+                    selections.
+            -   p: 'This topic will cover:'
+            -   ul:
+                - inventory selection
+                - global variables
+                - forks
+                - inventory limits
+                - inclusions
+                - roles
+        -   -   h2: Inventory Selection
+            -   code: '$ ansible-playbook -i production play.yaml
+
+                    $ ansible-playbook -i pre-prod play.yaml
+
+                    $ ansible-playbook -i hosts/dfw/ play.yaml
+
+                    '
+            -   class_notes: 'As you can see, we can specify different inventories
+                    to run the playbook "play.yaml" against.
+
+                    '
+        -   -   h2: Global Variables
+            -   code: '$ ansible-playbook -i pre-prod -e "cache_dir=/srv/cache/" play.yaml
+
+                    '
+            -   class_notes: Variables declared in this manner from the command line
+                    override other values.
+        -   -   h2: Forks
+            -   code: '$ ansible-playbook -f 30 -i pre-prod -e "cache_dir=/srv/cache/"
+                    play.yaml
+
+                    '
+            -   class_notes: "This shows us declaring this playbook to be run against\
+                    \ 30 hosts at a time by delcaring \n\"-f 30\" which is the flag\
+                    \ for \"forks equals 30 at a time.\"\n"
+        -   -   h2: Inventory-Limits
+            -   code: '$ ansible-playbook --limit dfw -f 30 -i pre-prod -e "cache_dir=/srv/cache/"
+                    play.yaml
+
+                    '
+            -   class_notes: "This shows us running a playbook while declaring a limit\
+                    \ to run only against \"DFW\" \nwhich could mean a single host\
+                    \ named DFW, or a host group DFW.\n"
+        -   -   h2: Inclusions
+            -   code: "- name: This is a Play\n  hosts: web-servers\n  remote_user:\
+                    \ fred\n  sudo: yes\n  connection: ssh\n  gather_facts: no\n \
+                    \ vars:\n    http_port: 80\n    cache_dir: /opt/cache\n\n  tasks:\n\
+                    \    - name: create cache dir\n      file: path={{ cache_dir }}\
+                    \ state=directory\n\n- include: playbook2.yaml\n"
+            -   class_notes: 'In this example we see that at the end of the playbook,
+                    we include another playbook.  This allows
+
+                    us to continue against other playbooks using the already discovered
+                    facts and variables declared.
+
+                    '
+        -   -   h2: Roles
+            -   p: Roles are portable units of task organization in playbooks.
+            -   class_notes: "Roles are units of organization in Ansible. Assigning\
+                    \ a role to a group of hosts \n(or a set of groups, or host patterns,\
+                    \ etc.) implies that they should implement a \nspecific behavior.\
+                    \ A role may include applying certain variable values, certain\
+                    \ tasks, \nand certain handlers - or just one or more of these\
+                    \ things. Because of the file structure \nassociated with a role,\
+                    \ roles become redistributable units that allow you to share \n\
+                    behavior among playbooks - or even with other users.\n"
+        -   -   h2: 'Galaxy: Sharing is Caring'
+            -   p: The Galaxy is a site where you can share roles.
+            -   link:
+                - http://galaxy.ansible.com
+                - http://galaxy.ansible.com
+            -   class_notes: "Galaxy is our repository for general roles that can\
+                    \ be shared among users.  You can find it at the \naddress provided\
+                    \ above.  You can share your roles, rate other people's roles,\
+                    \ and download them\nvia the command line using the ansible galaxy\
+                    \ commads.  You can also create an empty role to build\nby initializing\
+                    \ an empty role, which will populate all the correct files and\
+                    \ directories for you.\n"
+-   set_global:
+        transition: none
+-   -   nested:
+        -   -   h1: Basic Playbook Structure
+            -   class_notes: In this chapter we'll cover the basic playbook structure,
+                    and write a simple playbook from scratch.
+        -   -   h2: Play Header
+            -   code: "---\n- name: this is the name of a play\n  hosts: all\n  user:\
+                    \ root\n\n  tasks: []\n"
+            -   class_notes: As we covered earlier, a playbook is a series of plays.
+                    Each play needs a "hosts" keyword, which tells Ansible to which
+                    hosts hosts this play applies. You can define a lot of other parameters
+                    at the play level, including which user to log in as, whether
+                    these tasks should be run through sudo, which connection mechanism
+                    to use, etc.
+        -   -   h2: Write the tasks
+            -   code: "---\n- name: this is the name of a play\n  hosts: all\n  user:\
+                    \ root\n\n  tasks:\n  - name: install nginx\n    yum: package=nginx\
+                    \ state=present\n"
+            -   class_notes: Now that we have the "front matter" of the play defined,
+                    we can add the tasks, as shown. Each task can have a name that
+                    is human-readable. This isn't required, but it's recommended.
+                    Then you call the module, in this case "yum", and any arguments.
+        -   -   h2: Run the playbook
+            -   class_notes: 'Run the playbook. If you''ve written everything correctly,
+                    it should install nginx on the target systems, and return the
+                    results. Notice the "Gathering Facts" step that occurs at the
+                    top of the run. This is implicit, but you can turn it off with
+                    "gather_facts: no" in the play. At the end, a "host recap" will
+                    be printed out. This gives you a summary of tasks that completed
+                    successfully, tasks that changed something on the target system,
+                    any failures, or unreachable systems.'
+        -   -   image: http://cdn2.hubspot.net/hub/330046/file-449187601-png/ansible_badge.png
+            -   link:
+                - ansible.com
+                - http://www.ansible.com
+

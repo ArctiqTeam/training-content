@@ -1,0 +1,1680 @@
+
+<!doctype html>
+<html lang="en">
+
+        <head>
+                <meta charset="utf-8">
+
+                <title>Ansible Fundamentals</title>
+
+                <meta name="description" content="Ansible Fundamentals">
+                <meta name="author" content="Rackspace and Ansible">
+
+                <meta name="apple-mobile-web-app-capable" content="yes" />
+                <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+
+                <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+
+                <link rel="stylesheet" href="css/reveal.min.css">
+                <link rel="stylesheet" href="css/theme/default.css" id="theme">
+
+                <!-- For syntax highlighting -->
+                <link rel="stylesheet" href="lib/css/zenburn.css">
+
+                <!-- If the query includes 'print-pdf', use the PDF print sheet -->
+                <script>
+                        document.write( '<link rel="stylesheet" href="css/print/' + ( window.location.search.match( /print-pdf/gi ) ? 'pdf' : 'paper' ) + '.css" type="text/css" media="print">' );
+                </script>
+
+                <!--[if lt IE 9]>
+                <script src="lib/js/html5shiv.js"></script>
+                <![endif]-->
+        </head>
+
+        <body>
+
+     <div class="reveal">
+
+                        <!-- Any section element inside of this container is displayed as a slide -->
+                        <div class="slides">
+
+<section data-background='#000000' data-transition='linear'>
+<section>
+<h1 >
+Advanced Ansible</h1>
+</section><section>
+<h2 >
+Learning Objectives</h2>
+<p >
+Students will be able to understand</p>
+<p >
+<ul>
+  <li>Configuration Entries</li>
+  <li>Different connection methods</li>
+  <li>Variable types and precedences</li>
+  <li>Dynamic Inventories</li>
+  <li>Encrypted data for use within Ansible</li>
+  <li>Roles</li>
+  <li>Task Delegatation</li>
+  <li>Jinja2 Templates</li>
+</ul>
+</p>
+</section></section><section data-background='#000000' data-transition='linear'>
+<section>
+<h1 >
+Assessment Questions</h1>
+<p><a href='http://bit.ly/ansible_advanced' >
+http://bit.ly/ansible_advanced
+</a></p>
+</section></section><section data-background='#007777' data-transition='rotate'>
+<section>
+<h1 >
+Configuration Files</h1>
+<aside class='notes'>
+Configuration files accept configuration directives to modify
+the way Ansible runs, for example: configuring a specific 
+connection type, or to set the number of forks.
+
+</aside></section><section>
+<h3 >
+File locations</h3>
+<ul><br><li >ansible.cfg (in the current directory)</li><br><li >.ansible.cfg (in the home directory)</li><br><li >/etc/ansible/ansible.cfg</li></ul><aside class='notes'>
+These are the three locations where configuration files are kept.
+The configuration files in these locations are read and evaluated
+in an order of precedence.  The system file in /etc/ansible/ansible.cfg
+has the lowest precedence, the "~/.ansible.cfg" is next highest, and
+"./ansible.cfg" is the highest precedence.
+
+</aside></section><section>
+<h3 >
+Environment Variables</h3>
+<pre><code contenteditable >
+ANSIBLE_KEEP_ALL_FILES=True ansible -i hosts ...
+
+</pre></code>
+<aside class='notes'>
+Environment variables have the highest precedence of all, and work similarly
+to configuration directives in config files
+
+</aside></section><section>
+<h3 >
+Environment Variables</h3>
+<ul><br><li >Highest precedence</li><br><li >Enviroment variables & configuration directives</li><br><li >constants.py</li></ul><aside class='notes'>
+An enviroment variable is going to squash configuration directives
+at all levels.  Important to note: enviroment variables do not always
+have an equivalent configuration directive.
+Enviroment variables are not well documented, and are, for the most part
+documented only in code, in the "constants.py" file inside Ansible
+
+</aside></section><section>
+<h3 >
+Configuration Sections</h3>
+<ul><br><li >defaults</li><br><li >paramiko</li><br><li >ssh_connection</li><br><li >accelerate</li></ul><aside class='notes'>
+Each of the bullets are a "section" under which their respective directives
+should be used.  The config file uses INI format.
+
+</aside></section><section>
+<h3 >
+Configuration Sections</h3>
+<pre><code contenteditable >
+$ cat ansible.cfg
+[defaults]
+...
+
+</pre></code>
+<aside class='notes'>
+Sections are literally section headers for INI files. Configuration
+directives for each section are placed under their appropriate,
+respective section header.
+
+</aside></section><section>
+<h3 >
+Configuration Options</h3>
+<p >
+Each section has its own directives</p>
+<pre><code contenteditable >
+[defaults]
+hostfile = hosts
+private_key_file = ~/.ssh/id_rsa
+...
+
+</pre></code>
+<aside class='notes'>
+The directives are defined under their respective section.
+The Ansible documentation provides all the configuration directives
+for each section.
+
+</aside></section><section>
+<h3 >
+Configuration Options</h3>
+<p><a href='http://docs.ansible.com/intro_configuration.html' >
+http://docs.ansible.com/intro_configuration.html
+</a></p>
+</section><section>
+<h3 >
+Example Configuration</h3>
+<pre><code contenteditable >
+[defaults]
+hostfile = hosts
+private_key_file = /Users/username/.ssh/id_rsa
+nocows = 1
+forks = 50
+transport = ssh
+remote_user = ansibleuser
+ask_sudo_pass = True
+ask_vault_pass = True
+roles_path = roles
+
+[ssh_connection]
+pipelining = True
+scp_if_ssh = True
+
+</pre></code>
+<aside class='notes'>
+This is configuration file that was made to ensure Ansible complies
+with the local environment configuration.  For example, it explictly 
+forces ssh, asks for a sudo pass, sets forks to 50, etc.
+
+</aside></section><section>
+<h3 >
+Config File Tour</h3>
+<aside class='notes'>
+Students check their config files
+
+</aside></section></section><section data-background='#007777' data-transition='rotate'>
+<section>
+<h1 >
+Connection Types</h1>
+<aside class='notes'>
+Title slide. Ansible has a number of ways to connect to remote machines. SSH is the default, and there are two SSH mechanisms. This chapter will cover the differences between the two, as well as other connection mechanisms.
+</aside></section><section>
+<h1 >
+Smart (SSH auto-detected)</h1>
+<p >
+placeholder for diagram to show smart, openssh, and paramiko?</p>
+<aside class='notes'>
+By default, Ansible auto-detects the right SSH-based connection mechanism to use. There are two, Paramiko and OpenSSH. Paramiko is used when your version of OpenSSH on the control machine is too old to support "Control Persist/Control Master", which greatly improve connection performance. Ubuntu has a modern version of OpenSSH, but CentOS/RHEL6 do not.
+</aside></section><section>
+<h1 >
+OpenSSH</h1>
+<aside class='notes'>
+With the OpenSSH connection type, you can use regular SSH configuration use things like jump hosts to bounce from one host to another, Kerberos authentication, and any other SSH configuration that you need. OpenSSH also supports control master/control persist which improves the performance of multiple connections to the same machine, which is useful for Ansible.
+</aside></section><section>
+<h1 >
+Pipelining</h1>
+<aside class='notes'>
+If you're using OpenSSH, you can enable pipelining, which greatly increases SSH performance. It is enabled in the ansible.cfg configuration file. Pipelining is disabled by default because it requires a little bit of target machine configuration for sudo. You must  disable ‘requiretty’ in /etc/sudoers on all managed hosts.
+</aside></section><section>
+<h1 >
+Paramiko</h1>
+<aside class='notes'>
+Paramiko is a very simple Python implementation of an SSH client. Ansible uses it as a fallback when the version of OpenSSH on the control machine is not suitable. It doesn't support the advanced OpenSSH configuration like jump hosts, etc.
+</aside></section><section>
+<h1 >
+Accelerated Mode</h1>
+<p >
+http://docs.ansible.com/playbooks_acceleration.html</p>
+<aside class='notes'>
+Accelerated mode is a special kind of connection that sets up a temporary listener on the target server and then bypasses SSH using a special encrypted connection to run the rest of the tasks without having to establish a new SSH connection every time. It is about as fast as pipelined SSH, but it can have some additional performance benefits if you are transferring a lot of large files to the target systems.
+</aside></section><section>
+<h1 >
+Local Connections</h1>
+</section><section>
+<h1 >
+Connection Plugins</h1>
+</section></section><section data-background='#007777' data-transition='rotate'>
+<section>
+<h1 >
+Jinja2 Templates</h1>
+<p >
+I mustache you a question.</p>
+</section><section>
+<h2 >
+Jinja2 Templates</h2>
+<ul><br><li >Delimiters</li><br><li >Control Structures</li><br><li >Jinja2 Environment</li><br><li >Python Data Types</li><br><li >Filters and Tests</li></ul></section><section>
+<h2 >
+Delimiters</h2>
+<pre><code contenteditable >
+{{ variable }}
+
+</pre></code>
+<pre><code contenteditable >
+{% for server in groups.webservers %}
+
+</pre></code>
+<aside class='notes'>
+There are 2 (default) delimiters in jinja2. The first prints the result of the expression. The latter is used to execute statements such as for loops or assigning values.
+</aside></section><section>
+<h2 >
+Control Structures</h2>
+<p >
+<ul>
+  <li>for</li>
+  <li>if</li>
+  <li>macros</li>
+  <li>call</li>
+  <li>filters</li>
+  <li>assignments</li>
+  <li>extends</li>
+  <li>block</li>
+  <li>include</li>
+  <li>import</li>
+</ul>
+</p>
+<aside class='notes'>
+This is a list of all control strucutres as mentioned in the jinja2 docs.  The ones most people need to know about are "for" and "if".  Point students to <a href="http://jinja.pocoo.org/docs/templates/">http://jinja.pocoo.org/docs/templates/</a> for additional information about the other types.
+</aside></section><section>
+<h2 >
+For Loop</h2>
+<pre><code contenteditable >
+{% for server in groups.webservers %}
+{{ hostvars[server].ansible_default_ipv4.address }}
+{% endfor %}
+
+</pre></code>
+<aside class='notes'>
+Ending a control structure in jinja2 is generally done with endTYPE, where TYPE in the above case is "for".
+</aside></section><section>
+<h2 >
+If Statement</h2>
+<pre><code contenteditable >
+{% if server == inventory_hostname %}
+{{ 127.0.0.1 }}
+{% else if server in groups.database %}
+{{ hostvars[server].ansible_eth1.address }}
+{% else %}
+{{ hostvars[server].ansible_default_ipv4.address }}
+{% endif %}
+
+</pre></code>
+<aside class='notes'>
+This is an example of an if/else if/else statement, nothing too special here.
+</aside></section><section>
+<h2 >
+Accessing Variables from Other Hosts</h2>
+<p >
+The "hostvars" variable contains facts for all hosts that have had facts gathered.</p>
+<pre><code contenteditable >
+hostvars['web01'].ansible_eth1.address
+</pre></code>
+<aside class='notes'>
+Group variables are not held independent of the hosts. During inventory parsing, group vars are merged into the individual hosts facts.
+</aside></section><section>
+<h2 >
+Manipulating Jinja2 Environment</h2>
+<p >
+Ansible configures jinja2 with a set of sane defaults. In some cases these defaults are not optimal, usually in the case of variable_start_string or trim_blocks. The first line of a jinja2 template can include a jinja2 environment configuration line</p>
+<pre><code contenteditable >
+#jinja2:variable_start_string:'[%' , variable_end_string:'%]'
+
+</pre></code>
+<aside class='notes'>
+This example shows changing "{{ ... }}" to "[% ... %]". This is valuable in the case where you may need to use the "{{" or "}}" strings in your template that are not part of jinja2. <a href="http://jinja.pocoo.org/docs/api/#jinja2.Environment">http://jinja.pocoo.org/docs/api/#jinja2.Environment</a>
+</aside></section><section>
+<h2 >
+Jinja2 Variables are Python Data Types</h2>
+<p >
+In some cases there will not be Jinja2 filters that do what you want, such as a lack of a "split" filter. This can be achieved using the ".split()" method on a python string object.</p>
+<pre><code contenteditable >
+{% set servers = "server1,server2,server3" %}
+{% for server in servers.split(",") %}
+{{ server }}
+{% endfor %}
+
+</pre></code>
+</section><section>
+<h2 >
+Filters and Tests</h2>
+<p >
+Jinja2 provides you with a number of filters and tests to manipulate and test data. Ansible also provides a number of filters.</p>
+<p><a href='http://docs.ansible.com/playbooks_variables.html#jinja2-filters' >
+http://docs.ansible.com/playbooks_variables.html#jinja2-filters
+</a></p>
+</section><section>
+<h2 >
+Filters</h2>
+<p >
+Filters are invoked similarly to unix shell pipes and manipulate variables and return the results</p>
+<pre><code contenteditable >
+variable | replace("-", "_")
+
+</pre></code>
+<aside class='notes'>
+Additional details can be found at <a href="http://jinja.pocoo.org/docs/templates/#filters">http://jinja.pocoo.org/docs/templates/#filters</a>
+</aside></section><section>
+<h2 >
+Tests</h2>
+<p >
+Tests can be used to test a variable against a common expression</p>
+<pre><code contenteditable >
+{% if variable is defined %}
+
+</pre></code>
+<aside class='notes'>
+Additional details can be found at <a href="http://jinja.pocoo.org/docs/templates/#tests">http://jinja.pocoo.org/docs/templates/#tests</a>
+</aside></section></section><section data-background='#007777' data-transition='rotate'>
+<section>
+<h1 >
+Variable Types and Precedence</h1>
+<p >
+What is your variable and where does it go?</p>
+</section><section>
+<h2 >
+Where variables are defined or sourced</h2>
+<ul><br><li >Inventory</li><br><li >Playbook</li><br><li >Files and Roles</li><br><li >Command Line</li><br><li >Facts</li></ul><aside class='notes'>
+This chapter will be about Variable Types and Precedence.
+It will also touch a bit on Jinja2 and Roles.
+
+</aside></section><section>
+<h2 >
+Variable Precedence</h2>
+<p >
+Variables will override each other depending on where they are defined:</p>
+<ol><br><li >Command line variables have the highest precedence.</li><br><li >'most everything else' come next.</li><br><li >Variables defined in inventory.</li><br><li >Next comes facts discovered about a system.</li><br><li >Role defaults lose in priority to everything else.</li></ol><aside class='notes'>
+Ansible says you shouldn't really care about variable precedence.
+Put things where you want, and it should 'just work'.
+
+</aside></section><section>
+<h2 >
+Defining Variables</h2>
+<p >
+Let's go over the various locations you can define variables.</p>
+<aside class='notes'>
+The next slides will contain details on the various variable locations.
+
+</aside></section><section>
+<h2 >
+Inventory</h2>
+<p >
+There are a couple of methods for defining variables in your inventory:</p>
+<pre><code contenteditable >
+localhost ansible_connection=local
+
+[web]
+web1.example.com ansible_ssh_port=5555 ansible_ssh_host=192.168.1.50
+web2.example.com ansible_ssh_user=mdehaan
+
+[db]
+db01.example.com mysql_max_connections=100
+
+[web:vars]
+apache_max_clients=100
+
+</pre></code>
+<aside class='notes'>
+There are a few examples here:
+  * The ansible ssh and connection options.
+  * A plain variable override for a specific host (mysql)
+  * A group variable override for the web group.
+
+</aside></section><section>
+<h2 >
+Playbook</h2>
+<p >
+Here is an example of defining variables in a playbook:</p>
+<pre><code contenteditable >
+- hosts: webservers
+  vars:
+    http_port: 80
+
+</pre></code>
+<aside class='notes'>
+This shows a simple vars example as defined at the beginning of a play.
+
+</aside></section><section>
+<h2 >
+Command Line</h2>
+<p >
+You can also override variables from the command line:</p>
+<pre><code contenteditable >
+ansible-playbook release.yml --extra-vars "version=1.23.45 other_var=foo"
+
+</pre></code>
+<aside class='notes'>
+Here is how you override variables on the command line.
+Ask the class what they think the short flag is?
+-e is the short flag.
+
+</aside></section><section>
+<h2 >
+Including Variable Files</h2>
+<p >
+Here is an example of including a variable file based on a condition:</p>
+<pre><code contenteditable >
+- name: Includiung OS specific variables
+  include_vars: '{{ ansible_os_family }}.yml'
+
+</pre></code>
+<aside class='notes'>
+What value do the students thing the ansible_os_family variable references?
+This is typically Debian or RedHat for most systems.
+
+</aside></section><section>
+<h2 >
+Roles</h2>
+<p >
+Ansible Roles also have variables that can be defined:</p>
+<ul><br><li >Rolename/vars contains variables that should stay internal to the role.</li><br><li >Rolename/defaults contains variables that can be overridden.</li></ul><aside class='notes'>
+The roles chapter will dig into this a lot more.
+The main point is defaults are meant to be overridden.
+
+</aside></section><section>
+<h2 >
+Facts</h2>
+<p >
+System facts are sourced from the following sources:</p>
+<ul><br><li >setup module</li><br><li >set_fact module</li><br><li >facts.d</li></ul><aside class='notes'>
+The files placed in facts.d are processed by the setup module.
+aka, the Gathering Facts step.
+
+</aside></section><section>
+<h2 >
+Setup Module</h2>
+<p >
+Run the setup module against your local machine to see what returns.</p>
+<pre><code contenteditable >
+ansible localhost -m setup --connection=local
+
+</pre></code>
+<aside class='notes'>
+Have students run this on their ansible server.
+This requires an inventory file with 'localhost' defined.
+/etc/ansible/hosts
+
+</aside></section><section>
+<h2 >
+Discovered Facts</h2>
+<p >
+Here is a sampling of facts discovered by the setup module:</p>
+<pre><code contenteditable >
+localhost | success >> {
+    "ansible_facts": {
+        "ansible_all_ipv4_addresses": [
+            "192.168.1.37",
+            "172.17.42.1"
+        ],
+        "ansible_all_ipv6_addresses": [
+            "fe80::c685:8ff:fe3b:a916"
+        ],
+        "ansible_architecture": "x86_64",
+        "ansible_bios_date": "01/29/2013",
+        "ansible_bios_version": "UX32A.214",
+        "ansible_cmdline": {
+            "BOOT_IMAGE": "/vmlinuz-3.13.0-27-generic.efi.signed",
+            "quiet": true,
+            "ro": true,
+            "root": "/dev/mapper/kubuntu--vg-root",
+            "splash": true,
+            "vt.handoff": "7"
+        },
+        "ansible_date_time": {
+            "date": "2014-05-30",
+            "day": "30",
+            "epoch": "1401460386",
+            "hour": "09",
+            "iso8601": "2014-05-30T14:33:06Z",
+            "iso8601_micro": "2014-05-30T14:33:06.057018Z",
+            "minute": "33",
+            "month": "05",
+            "second": "06",
+            "time": "09:33:06",
+            "tz": "CDT",
+            "tz_offset": "-0500",
+            "weekday": "Friday",
+            "year": "2014"
+        },
+        "ansible_default_ipv4": {
+            "address": "192.168.1.37",
+            "alias": "wlan0",
+            "gateway": "192.168.1.1",
+            "interface": "wlan0",
+            "macaddress": "c4:85:08:3b:a9:16",
+            "mtu": 1500,
+            "netmask": "255.255.255.0",
+            "network": "192.168.1.0",
+            "type": "ether"
+        },
+        "ansible_default_ipv6": {},
+        "ansible_devices": {
+            "sda": {
+                "holders": [],
+                "host": "SATA controller: Intel Corporation 7 Series Chipset Family 6-port SATA Controller [AHCI mode] (rev 04)",
+                "model": "Hitachi HTS54323",
+                "partitions": {
+                    "sda1": {
+                        "sectors": "625137282",
+                        "sectorsize": 512,
+                        "size": "298.09 GB",
+                        "start": "63"
+                    }
+                },
+                "removable": "0",
+                "rotational": "1",
+                "scheduler_mode": "deadline",
+                "sectors": "625142448",
+                "sectorsize": "512",
+                "size": "298.09 GB",
+                "support_discard": "0",
+                "vendor": "ATA"
+            },
+            "sdb": {
+                "holders": [],
+                "host": "SATA controller: Intel Corporation 7 Series Chipset Family 6-port SATA Controller [AHCI mode] (rev 04)",
+                "model": "SanDisk SSD i100",
+                "partitions": {
+                    "sdb1": {
+                        "sectors": "997376",
+                        "sectorsize": 512,
+                        "size": "487.00 MB",
+                        "start": "2048"
+                    },
+                    "sdb2": {
+                        "sectors": "499712",
+                        "sectorsize": 512,
+                        "size": "244.00 MB",
+                        "start": "999424"
+                    },
+                    "sdb3": {
+                        "sectors": "45404160",
+                        "sectorsize": 512,
+                        "size": "21.65 GB",
+                        "start": "1499136"
+                    }
+                },
+                "removable": "0",
+                "rotational": "0",
+                "scheduler_mode": "deadline",
+                "sectors": "46905264",
+                "sectorsize": "512",
+                "size": "22.37 GB",
+                "support_discard": "512",
+                "vendor": "ATA"
+            },
+            "sdc": {
+                "holders": [],
+                "host": "USB controller: Intel Corporation 7 Series/C210 Series Chipset Family USB Enhanced Host Controller #2 (rev 04)",
+                "model": "xD/SD/M.S.",
+                "partitions": {},
+                "removable": "1",
+                "rotational": "1",
+                "scheduler_mode": "deadline",
+                "sectors": "0",
+                "sectorsize": "512",
+                "size": "0.00 Bytes",
+                "support_discard": "0",
+                "vendor": "Generic-"
+            }
+        },
+        "ansible_distribution": "Ubuntu",
+        "ansible_distribution_major_version": "14",
+        "ansible_distribution_release": "trusty",
+        "ansible_distribution_version": "14.04",
+        "ansible_docker0": {
+            "active": false,
+            "device": "docker0",
+            "id": "8000.56847afe9799",
+            "interfaces": [],
+            "ipv4": {
+                "address": "172.17.42.1",
+                "netmask": "255.255.0.0",
+                "network": "172.17.0.0"
+            },
+            "macaddress": "56:84:7a:fe:97:99",
+            "mtu": 1500,
+            "promisc": false,
+            "stp": false,
+            "type": "bridge"
+        },
+        "ansible_domain": "onitato.com",
+        "ansible_env": {
+            "COLORFGBG": "15;0",
+            "DBUS_SESSION_BUS_ADDRESS": "unix:abstract=/tmp/dbus-0Rf33lsHZU",
+            "DEFAULTS_PATH": "/usr/share/gconf/kde-plasma.default.path",
+            "DESKTOP_SESSION": "kde-plasma",
+            "DISPLAY": ":0",
+            "GDMSESSION": "kde-plasma",
+            "GDM_LANG": "en_US",
+            "GNOME_KEYRING_CONTROL": "/run/user/1000/keyring-tJuVCy",
+            "GNOME_KEYRING_PID": "2128",
+            "GPG_AGENT_INFO": "/tmp/gpg-c2qDOe/S.gpg-agent:2257:1",
+            "GS_LIB": "/home/linuturk/.fonts",
+            "GTK2_RC_FILES": "/etc/gtk-2.0/gtkrc:/home/linuturk/.gtkrc-2.0:/home/linuturk/.kde/share/config/gtkrc-2.0",
+            "GTK_RC_FILES": "/etc/gtk/gtkrc:/home/linuturk/.gtkrc:/home/linuturk/.kde/share/config/gtkrc",
+            "HOME": "/home/linuturk",
+            "IM_CONFIG_PHASE": "1",
+            "INSTANCE": "",
+            "JOB": "dbus",
+            "KDE_FULL_SESSION": "true",
+            "KDE_MULTIHEAD": "false",
+            "KDE_SESSION_UID": "1000",
+            "KDE_SESSION_VERSION": "4",
+            "KONSOLE_DBUS_SERVICE": ":1.410",
+            "KONSOLE_DBUS_SESSION": "/Sessions/2",
+            "KONSOLE_DBUS_WINDOW": "/Windows/1",
+            "KONSOLE_PROFILE_NAME": "Shell",
+            "LANG": "en_US.UTF-8",
+            "LANGUAGE": "en_US:en",
+            "LC_CTYPE": "en_US.UTF-8",
+            "LESSCLOSE": "/usr/bin/lesspipe %s %s",
+            "LESSOPEN": "| /usr/bin/lesspipe %s",
+            "LOGNAME": "linuturk",
+            "LS_COLORS": "rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arj=01;31:*.taz=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.zip=01;31:*.z=01;31:*.Z=01;31:*.dz=01;31:*.gz=01;31:*.lz=01;31:*.xz=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.jpg=01;35:*.jpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.axv=01;35:*.anx=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.axa=00;36:*.oga=00;36:*.spx=00;36:*.xspf=00;36:",
+            "MANDATORY_PATH": "/usr/share/gconf/kde-plasma.mandatory.path",
+            "PAM_KWALLET_LOGIN": "/tmp//linuturk.socket",
+            "PATH": "/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games",
+            "PROFILEHOME": "",
+            "PWD": "/home/linuturk/github/ansible-sprint/advanced",
+            "QT_PLUGIN_PATH": "/home/linuturk/.kde/lib/kde4/plugins/:/usr/lib/kde4/plugins/",
+            "SELINUX_INIT": "YES",
+            "SESSION": "kde-plasma",
+            "SESSIONTYPE": "",
+            "SESSION_MANAGER": "local/arrow:@/tmp/.ICE-unix/2442,unix/arrow:/tmp/.ICE-unix/2442",
+            "SHELL": "/bin/bash",
+            "SHELL_SESSION_ID": "559b7b8e474c4000aa16e447d32e4b27",
+            "SHLVL": "1",
+            "SSH_AGENT_LAUNCHER": "upstart",
+            "SSH_AGENT_PID": "2259",
+            "SSH_AUTH_SOCK": "/tmp/ssh-NgX9DMrVWBek/agent.2253",
+            "TERM": "xterm",
+            "TEXTDOMAIN": "im-config",
+            "TEXTDOMAINDIR": "/usr/share/locale/",
+            "UPSTART_EVENTS": "started xsession",
+            "UPSTART_INSTANCE": "",
+            "UPSTART_JOB": "startkde",
+            "UPSTART_SESSION": "unix:abstract=/com/ubuntu/upstart-session/1000/2133",
+            "USER": "linuturk",
+            "WINDOWID": "71303194",
+            "XAUTHORITY": "/tmp/kde-linuturk/xauth-1000-_0",
+            "XCURSOR_THEME": "oxy-white",
+            "XDG_CONFIG_DIRS": "/etc/xdg/xdg-kde-plasma:/usr/share/upstart/xdg:/etc/xdg",
+            "XDG_CURRENT_DESKTOP": "KDE",
+            "XDG_DATA_DIRS": "/usr/share:/usr/share/kde-plasma:/usr/local/share/:/usr/share/",
+            "XDG_GREETER_DATA_DIR": "/var/lib/lightdm-data/linuturk",
+            "XDG_RUNTIME_DIR": "/run/user/1000",
+            "XDG_SEAT": "seat0",
+            "XDG_SEAT_PATH": "/org/freedesktop/DisplayManager/Seat0",
+            "XDG_SESSION_ID": "c2",
+            "XDG_SESSION_PATH": "/org/freedesktop/DisplayManager/Session0",
+            "XDG_VTNR": "7",
+            "_": "/usr/local/bin/ansible"
+        },
+        "ansible_form_factor": "Notebook",
+        "ansible_fqdn": "arrow.onitato.com",
+        "ansible_hostname": "arrow",
+        "ansible_interfaces": [
+            "lo",
+            "docker0",
+            "wlan0"
+        ],
+        "ansible_kernel": "3.13.0-27-generic",
+        "ansible_lo": {
+            "active": true,
+            "device": "lo",
+            "ipv4": {
+                "address": "127.0.0.1",
+                "netmask": "255.0.0.0",
+                "network": "127.0.0.0"
+            },
+            "ipv6": [
+                {
+                    "address": "::1",
+                    "prefix": "128",
+                    "scope": "host"
+                }
+            ],
+            "mtu": 65536,
+            "promisc": false,
+            "type": "loopback"
+        },
+        "ansible_lsb": {
+            "codename": "trusty",
+            "description": "Ubuntu 14.04 LTS",
+            "id": "Ubuntu",
+            "major_release": "14",
+            "release": "14.04"
+        },
+        "ansible_machine": "x86_64",
+        "ansible_memfree_mb": 677,
+        "ansible_memtotal_mb": 9884,
+        "ansible_mounts": [
+            {
+                "device": "/dev/mapper/kubuntu--vg-root",
+                "fstype": "ext4",
+                "mount": "/",
+                "options": "rw,errors=remount-ro",
+                "size_available": 9636679680,
+                "size_total": 22740668416
+            },
+            {
+                "device": "/dev/sdb2",
+                "fstype": "ext2",
+                "mount": "/boot",
+                "options": "rw",
+                "size_available": 132574208,
+                "size_total": 247772160
+            },
+            {
+                "device": "/dev/sdb1",
+                "fstype": "vfat",
+                "mount": "/boot/efi",
+                "options": "rw",
+                "size_available": 506130432,
+                "size_total": 509640704
+            },
+            {
+                "device": "/dev/mapper/kubuntu--home--vg-home",
+                "fstype": "ext4",
+                "mount": "/home",
+                "options": "rw",
+                "size_available": 186540474368,
+                "size_total": 304337379328
+            }
+        ],
+        "ansible_nodename": "arrow",
+        "ansible_os_family": "Debian",
+        "ansible_pkg_mgr": "apt",
+        "ansible_processor": [
+            "Intel(R) Core(TM) i3-2367M CPU @ 1.40GHz",
+            "Intel(R) Core(TM) i3-2367M CPU @ 1.40GHz",
+            "Intel(R) Core(TM) i3-2367M CPU @ 1.40GHz",
+            "Intel(R) Core(TM) i3-2367M CPU @ 1.40GHz"
+        ],
+        "ansible_processor_cores": 2,
+        "ansible_processor_count": 1,
+        "ansible_processor_threads_per_core": 2,
+        "ansible_processor_vcpus": 4,
+        "ansible_product_name": "UX32A",
+        "ansible_product_serial": "NA",
+        "ansible_product_uuid": "NA",
+        "ansible_product_version": "1.0",
+        "ansible_python_version": "2.7.6",
+        "ansible_selinux": false,
+        "ansible_swapfree_mb": 10211,
+        "ansible_swaptotal_mb": 10239,
+        "ansible_system": "Linux",
+        "ansible_system_vendor": "ASUSTeK COMPUTER INC.",
+        "ansible_user_id": "linuturk",
+        "ansible_userspace_architecture": "x86_64",
+        "ansible_userspace_bits": "64",
+        "ansible_virtualization_role": "host",
+        "ansible_virtualization_type": "kvm",
+        "ansible_wlan0": {
+            "active": true,
+            "device": "wlan0",
+            "ipv4": {
+                "address": "192.168.1.37",
+                "netmask": "255.255.255.0",
+                "network": "192.168.1.0"
+            },
+            "ipv6": [
+                {
+                    "address": "fe80::c685:8ff:fe3b:a916",
+                    "prefix": "64",
+                    "scope": "link"
+                }
+            ],
+            "macaddress": "c4:85:08:3b:a9:16",
+            "module": "iwlwifi",
+            "mtu": 1500,
+            "promisc": false,
+            "type": "ether"
+        },
+        "module_setup": true
+    },
+    "changed": false
+}
+
+</pre></code>
+<aside class='notes'>
+Ask your students to find a useful variable and think about how they
+would use it?
+There is a ton of useful variables when you run the setup module.
+You can make intelligent decisions in your plays based on this
+information.
+
+</aside></section><section>
+<h2 >
+Discovered Facts</h2>
+<p >
+Here is how you reference these variables:</p>
+<pre><code contenteditable >
+{{ ansible_devices.sda.model }}
+{{ ansible_hostname }}
+
+</pre></code>
+<aside class='notes'>
+Make note of how you reference embedded variables with the dot notation.
+
+</aside></section><section>
+<h2 >
+Setting Facts in a Play</h2>
+<p >
+You can set facts manually in a play using the set_facts module:</p>
+<pre><code contenteditable >
+# Example setting host facts using key=value pairs
+- set_fact: one_fact="something" other_fact="{{ local_var * 2 }}"
+
+# Example setting host facts using complex arguments
+- set_fact:
+     one_fact: something
+     other_fact: "{{ local_var * 2 }}"
+
+</pre></code>
+<aside class='notes'>
+This shows the two main ways to define variables.
+The key=value style, and the complex style.
+
+</aside></section><section>
+<h2 >
+Local Facts (Facts.d)</h2>
+<p >
+You can place files ending in '.fact' in the /etc/ansible/facts.d directory. These can be JSON, INI, or executable files. Here is an example file:</p>
+<pre><code contenteditable >
+[general]
+asdf=1
+bar=2
+
+</pre></code>
+<p >
+And here is how you reference the asdf variable.</p>
+<pre><code contenteditable >
+{{ ansible_local.preferences.general.asdf }}
+
+</pre></code>
+<aside class='notes'>
+The code sample shows the file to be dropped,
+and the way to reference that variable in templates and plays.
+What type of facts would students put in facts.d?
+Maybe something like master or cluster status?
+
+</aside></section><section>
+<h2 >
+Using Variables in Jinja2</h2>
+<p >
+You've seen several examples of variables being referenced. The same method is used to reference these variables in Jinja2 templates.</p>
+<pre><code contenteditable >
+{{ variable_name }}
+
+</pre></code>
+<aside class='notes'>
+Most students should have figured this out by now. We are about to
+introduce the filters in Jinja though, so it is worth revisiting this.
+
+</aside></section><section>
+<h2 >
+Jinja2 Filters</h2>
+<p >
+There are many useful filters you can use in your Jinja2 templates. Here are a few useful ones:</p>
+<pre><code contenteditable >
+# Combine two lists
+{{ list1 | union(list2) }}
+
+# Get a random number
+{{ 59 | random }} * * * * root /script/from/cron
+
+# md5sum of a filename
+{{ filename | md5 }}
+
+# Comparisons
+{{ ansible_distribution_version | version_compare('12.04', '>=') }}
+
+</pre></code>
+<aside class='notes'>
+Ask students to find a filter that makes a variable all lowercase.
+ie, Ubuntu => ubuntu
+{{ variable | lower }} is the answer.
+There are a lot more filters out there.
+Reference the Ansible and Jinja2 documentation for a complete list.
+
+</aside></section><section>
+<h2 >
+Defaulting Values</h2>
+<p >
+You can provide a default value for a variable using the following filter:</p>
+<pre><code contenteditable >
+{{ some_variable | default("foobar") }}
+
+</pre></code>
+<aside class='notes'>
+Defaulting values is a great way to deal with undefined variables.
+It allows you have to have some sane defaults in your templates,
+but allow them to be easily overridden.
+
+</aside></section><section>
+<h2 >
+Magic Variables</h2>
+<p >
+Ansible provides information about other hosts though a series of 'magic variables'.</p>
+<ul><br><li >hostvars</li><br><li >group_names</li><br><li >groups</li></ul><aside class='notes'>
+Ansible provides these for you automatically.
+These three are the most important.
+Don't use these names as they are reserved.
+'environment' is also reserved.
+
+</aside></section><section>
+<h2 >
+hostvars</h2>
+<p >
+Hostvars let you ask about the variables of another host, including facts that have been gathered about that host.</p>
+<pre><code contenteditable >
+{{ hostvars['test.example.com']['ansible_distribution'] }}
+
+</pre></code>
+<aside class='notes'>
+Where would this be useful?
+Grabbing an IP address of another host would be an example.
+This specific example will give you the value of
+ansible_distribution from the host test.example.com.
+This doesn't have to run on test.example.com to retrieve this value.
+
+</aside></section><section>
+<h2 >
+group_names</h2>
+<p >
+The group_names variable contains a list of all the groups the current host is in.</p>
+<pre><code contenteditable >
+{% if 'webserver' in group_names %}
+   # some part of a configuration file that only applies to webservers
+{% endif %}
+
+</pre></code>
+<aside class='notes'>
+Why would you use this method?
+Apply actions to a host based on it's group. ie, MySQL slave readonly=1
+This example checks the current host is in the webserver group.
+If it is, the information between the blocks will be rendered.
+
+</aside></section><section>
+<h2 >
+groups</h2>
+<p >
+groups is a list of all the groups (and hosts) in the inventory.</p>
+<pre><code contenteditable >
+{% for host in groups['app_servers'] %}
+   # something that applies to all app servers.
+{% endfor %}
+
+</pre></code>
+<aside class='notes'>
+This would allow you to work with all the app servers.
+Where would your students use this?
+A good example would be listing all your app servers in
+your haproxy configuration.
+
+</aside></section><section>
+<h2 >
+Lab: Overriding Variables</h2>
+<p >
+Given this play, override the local_var variable using the command line flag.</p>
+<pre><code contenteditable >
+- hosts: localhost
+  connection: local
+  vars:
+    - local_var: "override me"
+  tasks:
+    - name: print out the variable
+      debug: msg="This should not output 'override me' - {{ local_var }}"
+
+</pre></code>
+<h6 >
+Objective: Override the variable without modifying the playbook</h6>
+<aside class='notes'>
+Students should override the variable without changing the play file itself.
+
+</aside></section><section>
+<h2 >
+Lab Solution</h2>
+<pre><code contenteditable >
+ansible-playbook variable_override.yml --extra-vars "local_var=foobar"
+
+</pre></code>
+<aside class='notes'>
+Students could have also used -e instead of the full option.
+
+</aside></section><section>
+<h2 >
+Lab Output</h2>
+<pre><code contenteditable >
+
+PLAY [localhost] **************************************************************
+
+GATHERING FACTS ***************************************************************
+ok: [localhost]
+
+TASK: [print out the variable] ************************************************
+ok: [localhost] => {
+    "msg": "This should not output 'override me' - foobar"
+}
+
+PLAY RECAP ********************************************************************
+localhost                  : ok=2    changed=0    unreachable=0    failed=0
+
+</pre></code>
+<aside class='notes'>
+The important bit here is the replaced value at the end of the msg line.
+
+</aside></section></section><section data-background='#007777' data-transition='rotate'>
+<section>
+<h1 >
+Dynamic Inventories</h1>
+</section><section>
+<h3 >
+What is Dynamic Inventory?</h3>
+<ul><br><li >Executable script</li><br><li >Queries a service that holds data about servers</li><br><li >Returns the data to Ansible (as JSON)</li></ul><aside class='notes'>
+Dynamic inventory is a script that queries a service, like a cloud
+provider API or a management application like Spacewalk.  This data
+is formatted in an Ansible-specific JSON data structure and is used in 
+lieu of hardcoded, static inventory files.
+
+</aside></section><section>
+<h3 >
+Why Dynamic Inventory?</h3>
+<ul><br><li >Time</li><br><li >Accuracy</li></ul><aside class='notes'>
+Ideally, the source of data for our dynamic inventory scripts is 100%
+correct, and is automatically updated as infrastructure changes.  This 
+is especially useful in environments where machines are coming on and offline
+all the time, like a cloud or virtual environment.
+
+</aside></section><section>
+<h3 >
+Manual Invocation</h3>
+<pre><code contenteditable >
+$ ./docker.py (--list | --host)
+
+</pre></code>
+<aside class='notes'>
+Manual invocation of a dynamic inventory script is straight forward.
+Dynamic inventory scripts must be executable, so calling them explictly will
+invoke the script and return JSON as output.
+All inventory scripts must accept two optional arguments, list and host.  'List'
+lists hosts, and 'host' accepts a hostname as an argument and returns data on the host.
+Note, '--host' is functionally optional because of the '_meta' hash returned in the
+'--list' results.  More on that later.
+
+</aside></section><section>
+<h3 >
+Results</h3>
+<p><img src='https://raw.githubusercontent.com/Linuturk/ansible-sprint/master/advanced/resources/chapter06/shot1.png' style='border:0px;background-color:#007777' ></p><aside class='notes'>
+The output of this command is returned as JSON, in an Ansible-specific structure.
+This image shows the invocation of the Docker inventory script. The script queries
+a Docker host and requests information about containers. The script creates groups,
+which we see as arrays of hostnames.  
+The '_meta' hash has data about hosts -- essentially this data becomes hostvars for 
+eac host.SSH host, port information plus additional host variables are returned by 
+the script which can later be used in plays.
+
+</aside></section><section>
+<h3 >
+Ansible with Dynamic Inventory</h3>
+<pre><code contenteditable >
+$ ansible -i ./docker.py --list-hosts running
+  suspicious_ptolemy
+  ecstatic_albattani
+
+</pre></code>
+<aside class='notes'>
+This is an example of an ad-hoc command using the inventory script.
+We use the -i argument just as we would with any other inventory script, however
+we use a path to a dynamic inventory script with this argument rather
+than a path to a static inventory file.
+You can see from this command we have asked to list hosts that the limit matches. In
+this example, we are matching the group "running".
+
+</aside></section><section>
+<h3 >
+Combining Inventory Types</h3>
+<pre><code contenteditable >
+$ tree
+.
+├── common.yml
+├── prod
+│   ├── docker.py
+│   └── servers
+└── site.yml
+
+1 directory, 4 files
+
+$ ansible-playbook -i prod site.yml
+
+</pre></code>
+<aside class='notes'>
+One can combine inventory types, both static and dynamic inventories, by
+placing them in a directory and referencing the directory as the value of the
+optional '-i' argument.
+In the example in this slide, you can see a static inventory file called 'servers',
+a dynamic inventory script called 'docker.py', in a directory called 'prod'. Notice
+that the value passed to the '-i' argument is the name of the directory, 'prod'.
+
+</aside></section><section>
+<h3 >
+Lab</h3>
+<p >
+Using the dynamic inventory script for today's infrastructure, provision several
+instances.  Manually run the inventory script to query information on 
+the instances.  Then, run the inventory script using an Ansible command to
+list and then ping the instances.
+</p>
+</section></section><section data-background='#007777' data-transition='rotate'>
+<section>
+<h1 >
+Ansible Vault</h1>
+<p >
+What are you trying to hide?</p>
+</section><section>
+<h1 >
+Ansible Vault</h1>
+<p >
+Ansible Vault is a tool to encrypt YAML variables files that may contain sensitive data.</p>
+<ul><br><li >Password-based</li><br><li >Separate command line tool</li><br><li >Encrypts YAML files</li></ul><aside class='notes'>
+Ansible Vault is a command line tool that can be used to encrypt files that may contain sensitive data. it's usually used to encrypt variables files, but it can encrypt entire playbooks as well. When Ansible is operating on a playbook that refers to an encrypted file, it can either prompt for the password or be fed a password via file. 'Question ideas; what kinds of information should be encrypted?'
+</aside></section><section>
+<h2 >
+Vault Operations</h2>
+<ul><br><li >create</li><br><li >edit</li><br><li >rekey</li><br><li >encrypt</li><br><li >decrypt</li></ul><aside class='notes'>
+ansible-vault is the CLI tool, and it has several operations.
+</aside></section><section>
+<h2 >
+Vault Operations</h2>
+<pre><code contenteditable >
+ansible-vault create secrets.yml
+</pre></code>
+<aside class='notes'>
+Create a new file and open it in $EDITOR. When it's saved, it will be encrypted.
+</aside></section><section>
+<h2 >
+Vault Operations</h2>
+<pre><code contenteditable >
+ansible-vault edit secrets.yml
+</pre></code>
+<aside class='notes'>
+Edit an existing file in $EDITOR. Ansible will decrypt it to a temporary location and open it in an editor, and then when saved, re-encrypt it.
+</aside></section><section>
+<h2 >
+Vault Operations</h2>
+<pre><code contenteditable >
+ansible-vault rekey secrets.yml
+</pre></code>
+<aside class='notes'>
+Change the password on an encrypted file.
+</aside></section><section>
+<h2 >
+Vault Operations</h2>
+<pre><code contenteditable >
+ansible-vault encrypt secrets.yml
+</pre></code>
+<aside class='notes'>
+Encrypt an existing file.
+</aside></section><section>
+<h2 >
+Vault Operations</h2>
+<pre><code contenteditable >
+ansible-vault decrypt secrets.yml
+</pre></code>
+<aside class='notes'>
+Permanently decrypt an encrypted file.
+</aside></section><section>
+<h2 >
+Running a Playbook</h2>
+<pre><code contenteditable >
+ansible-playbook --ask-vault-pass vault-test.yml
+</pre></code>
+<pre><code contenteditable >
+ansible-playbook --vault-password-file ../vault-pw vault-test.yml
+</pre></code>
+<aside class='notes'>
+There are two ways to run a playbook that refers to encrypted content. The first one prompts at runtime. The second method is to refer to a file on disk that contains the password.
+</aside></section><section>
+<h2 >
+Lab: Vault</h2>
+<ul><br><li >Create a new encrypted file</li><br><li >Edit that file</li><br><li >Re-key the file</li><br><li >Use an encrypted file in a playbook</li></ul><h6 >
+Objective: Create a vault-encrypted vars file for a subsequent lab.</h6>
+</section></section><section data-background='#007777' data-transition='rotate'>
+<section>
+<h1 >
+Roles</h1>
+<p >
+Reusing and sharing Ansible content.</p>
+<aside class='notes'>
+Title slide. Roles are a way to organize and reuse Ansible content in a standard way.
+</aside></section><section>
+<h2 >
+Filesystem Structure</h2>
+<p >
+Roles use specific file structures.</p>
+<aside class='notes'>
+Roles search for variables, files and templates in specific places. We'll discuss the file structure over the next few slides.
+</aside></section><section>
+<h3 >
+Example Role Structure in a Project Folder:</h3>
+<pre><code contenteditable >
+site.yml
+roles/
+   role1/
+     files/
+     templates/
+     tasks/
+     handlers/
+     vars/
+     meta/
+
+</pre></code>
+</section><section>
+<h3 >
+Calling a role in a playbook example:</h3>
+<pre><code contenteditable >
+---
+- hosts: webservers
+  roles:
+     - common
+     - webservers
+
+</pre></code>
+</section><section>
+<h3 >
+Behavior examples of role X:</h3>
+<ul><br><li >If roles/x/tasks/main.yml exists, tasks listed therein will be added to the play</li><br><li >If roles/x/handlers/main.yml exists, handlers listed therein will be added to the play</li><br><li >If roles/x/vars/main.yml exists, variables listed therein will be added to the play</li><br><li >If roles/x/meta/main.yml exists, any role dependencies listed therein will be added to the list of roles</li><br><li >Any copy tasks can reference files in roles/x/files/</li><br><li >Any script tasks can reference scripts in roles/x/files/</li><br><li >Any template tasks can reference files in roles/x/templates/</li><br><li >Any include tasks can reference files in roles/x/tasks/</li></ul></section><section>
+<h3 >
+Parameterize Your Roles:</h3>
+<pre><code contenteditable >
+---
+- hosts: webservers
+  roles:
+    - common
+    - { role: foo, dir: '/opt/a',  port: 5000 }
+    - { role: foo, dir: '/opt/b',  port: 5001 }
+
+</pre></code>
+</section><section>
+<h3 >
+Call Roles Conditionally:</h3>
+<pre><code contenteditable >
+---
+- hosts: webservers
+  roles:
+    - { role: foo, when: "ansible_os_family == 'RedHat'" }
+
+</pre></code>
+</section><section>
+<h3 >
+Pre and Post Tasks, Use of roles in a top level playbook:</h3>
+<pre><code contenteditable >
+---
+- hosts: webservers
+
+  pre_tasks:
+    - shell: echo 'Hello.'
+
+  roles:
+    - { role: some_role }
+
+  tasks:
+    - shell: echo 'I called a role!'
+
+  post_tasks:
+    - shell: echo 'Goodbye.'
+
+</pre></code>
+</section><section>
+<h2 >
+Variables Defaults</h2>
+<p >
+It is possible to set default variables for your roles.</p>
+<aside class='notes'>
+Role default variables allow you to set default variables for included or dependent roles. To create defaults, simply add a defaults/main.yml file in your role directory. These variables will have the lowest priority of any variables available, and can be easily overridden by any other variable, including inventory variables.
+</aside></section><section>
+<h2 >
+Role Dependencies</h2>
+<p >
+Role Dependencies allow for roles to automatically pull in other roles.</p>
+<aside class='notes'>
+Role dependencies allow you to automatically pull in other roles when using a role. Role dependencies are stored in the meta/main.yml file contained within the role directory. This file should contain a list of roles and parameters to insert before the specified role.
+</aside></section><section>
+<h3 >
+Example role dependency entry in the meta/main.yml file</h3>
+<pre><code contenteditable >
+---
+dependencies:
+  - { role: common, some_parameter: 3 }
+  - { role: apache, port: 80 }
+  - { role: postgres, dbname: blarg, other_parameter: 12 }
+
+</pre></code>
+</section><section>
+<h3 >
+Duplicate Role Dependiencies</h3>
+<p >
+You can call a role dependency multiple times with various parameters.</p>
+<pre><code contenteditable >
+---
+allow_duplicates: yes
+dependencies:
+  - { role: apache, port: 80 }
+  - { role: apache, port: 8080 }
+
+</pre></code>
+<aside class='notes'>
+Not a common use case, but you can parameterize role dependencies in a repeated way.  Such as having multiple runs of apache based on the dependencies of another role.  This could get you multiple versions of a stack of apache, tomcat and a database with different parameters.  The order of execution would be the order of the duplicates and repeat the roles that depend on it.  For example, this could be tomcat, apache with port 80, then tomcat, apache with port 8080, and so on.  They will rerun against the same inventory, of course.
+</aside></section><section>
+<h2 >
+Embedding Custom Modules</h2>
+<p >
+Role-specific custom modules can be packaged with the role.</p>
+<aside class='notes'>
+This is an advanced topic that should not be relevant for most users. If you write a custom module you may wish to distribute it as part of a role. Generally speaking, Ansible as a project is very interested in taking high-quality modules into ansible core for inclusion, so this shouldn’t be the norm, but it’s quite easy to do.
+</aside></section><section>
+<h3 >
+Examples of embedding a custom module in a role:</h3>
+<pre><code contenteditable >
+roles/
+my_role/
+  library/
+    module1
+    module2
+
+</pre></code>
+<aside class='notes'>
+Alongside the ‘tasks’ and ‘handlers’ structure of a role, add a directory named ‘library’. In this ‘library’ directory, then include the module directly inside of it.
+</aside></section><section>
+<h3 >
+Calling the role with a custom module in a playbook:</h3>
+<pre><code contenteditable >
+- hosts: webservers
+  roles:
+    - my_role
+
+</pre></code>
+<aside class='notes'>
+As you can see, we call a role with a custom module just as we would a role without one. This is because our custom module also follows the file structure as previously described.
+</aside></section><section>
+<h2 >
+Ansible Galaxy</h2>
+<p >
+Sharing is caring. visit http://galaxy.ansible.com</p>
+<aside class='notes'>
+Ansible Galaxy is a free site for finding, downloading, rating, and reviewing all kinds of community developed Ansible roles and can be a great way to get a jumpstart on your automation projects. You can sign up with social auth, and the download client ‘ansible-galaxy’ is included in Ansible 1.4.2 and later.
+</aside></section><section>
+<h3 >
+One last trick: Galaxy has you covered.</h3>
+<pre><code contenteditable >
+ansible-galaxy init mynewrole
+
+</pre></code>
+<aside class='notes'>
+the ansible-galaxy command doesn't just download an install roles from the public service, it will also initialize an empty role with the role name of your choosing. This means it will place all the folders, skeleton files and file structure as needed. Use this to write roles without having to remember to create every file or folder.
+</aside></section></section><section data-background='#007777' data-transition='rotate'>
+<section>
+<h1 >
+Delegation</h1>
+<p >
+I like things done my way but by somebody else.</p>
+<aside class='notes'>
+In this chapter we discuss delegation, how tasks in a play
+can be redirected to an alternate host for execution.
+What use cases can you think of for looping over hosts to
+execute a task, but have that task execute somewhere else?
+
+</aside></section><section>
+<h2 >
+Delegation</h2>
+<ul><br><li >Local actions and actions on other hosts</li><br><li >Delegation to a host in inventory</li><br><li >Delegation to a host not in inventory</li><br><li >Task execution concurrency with delegation</li></ul><aside class='notes'>
+Actions can be done locally, or on another system in your
+inventory, or out of your inventory. Execution concurrency
+is a concern as well.
+
+</aside></section><section>
+<h2 >
+Local actions and actions on other hosts</h2>
+<p >
+Task control keyword: delegate_to</p>
+<pre><code contenteditable >
+- name: take out of load balancer pool
+  command: /usr/bin/take_out_of_pool {{ inventory_hostname }}
+  delegate_to: localhost
+
+- name: update packages
+  yum: name=acme-web-stack state=latest
+
+- name: add back to load balancer pool
+  command: /usr/bin/add_back_to_pool {{ inventory_hostname }}
+  delegate_to: localhost
+
+</pre></code>
+<aside class='notes'>
+The delegate_to keyword is what tells Ansible to redirect the
+task to the system listed. The variables you reference are
+attached to the host in the loop, not the host you are
+delegating to. So the task has the context of the host in the
+loop but it just gets executed on the host you delegate to.
+
+Is there another way to indicate that an action needs to
+happen locally?
+
+</aside></section><section>
+<h2 >
+Delegation to a host in inventory</h2>
+<p >
+Delegation most often targets another host in your inventory</p>
+<p >
+Uses connection variable data from delegate target</p>
+<ul><br><li >ansible_connection</li><br><li >ansible_ssh_host</li><br><li >ansible_ssh_port</li><br><li >ansible_ssh_user</li><br><li >etc...</li></ul><aside class='notes'>
+When delegating to a host listed in your inventory, data
+from your delegation target will be used when creating the
+connection to the delegation target, but only the connection
+related variables. The rest will be read from the host in the
+loop.
+
+</aside></section><section>
+<h2 >
+Delegation to a host not in inventory</h2>
+<p >
+Delegation: not just limited to hosts in your inventory</p>
+<p >
+Make use of add_host to adjust connection details</p>
+<pre><code contenteditable >
+- name: add delegation host
+  add_host: name=hubert ansible_ssh_host=192.168.10.2
+            ansible_ssh_user=fred
+
+</pre></code>
+<aside class='notes'>
+You can also delegate to a host that doesn't exist in your
+inventory. In this case, ansible will use the string provided
+verbatim and attempt to connect to it with the current connection
+type and details. If you need to adjust the connection details,
+make use of the add_host task to create an ephemeral host in your
+inventory with connection data defined.
+
+</aside></section><section>
+<h2 >
+Lab: ephemeral host task delegation</h2>
+<p >
+Create an ephemeral host and delegate a task to it</p>
+<ul><br><li >Create a play for localhost</li><br><li >Create a host using add_host with detailed connection variables</li><br><li >Create a simple task that is delegated to the added host</li><br><li >Run playbook with -vvvv to observe the connection details</li></ul><aside class='notes'>
+This is a simple contrived lab that will exercise making use of
+add_host to create an ephemeral host to delegate a task to. This
+host doesn't have to actually exist, a connection failure on the
+task will suffice to see the connection details to observe the
+delegation. Feel free to play with values and observe how they
+reflect in running the lab.
+
+</aside><h6 >
+Objective: Using an ephemeral host to delegate a single task to</h6>
+</section><section>
+<h2 >
+Sample Play</h2>
+<pre><code contenteditable >
+---
+- name: test play
+  hosts: localhost
+
+  tasks:
+    - name: add delegation host
+      add_host: name=hubert ansible_ssh_host=192.168.10.2
+                ansible_ssh_user=fred
+
+    - name: silly echo
+      command: echo {{ inventory_hostname }}
+      delegate_to: hubert
+
+</pre></code>
+<pre><code contenteditable >
+$ ansible-playbook test-play.yml -vvvv
+
+</pre></code>
+</section><section>
+<h2 >
+Task execution concurrency with delegation</h2>
+<p >
+Delegated tasks will run for every host in the loop</p>
+<p >
+Tasks will run with configured forks / serial</p>
+<p >
+Be aware of race conditions and concurrency issues</p>
+<aside class='notes'>
+Delegated tasks will run for every host in the hosts: , but this
+can create issues with race conditions, particularly when using
+conditionals in the task, as the forks count will be used to create
+multiple concurrent tasks. This can also create a thundering
+herd problem of too many connections opening at once to a single
+host. SSH servers have a MaxStartups config option that can limit
+how many concurrent connections it'll allow. Easy to overflow.
+
+What happens when you have five hosts in your set, five or more
+forks, a task that is conditional on the existence of a file, and
+the task creates the file. All five tasks will run at once, racing
+to create the file.
+
+</aside></section><section>
+<h2 >
+Lab: multi-host task delegation</h2>
+<ul><br><li >Create a play to loop over 'webservers' group</li><br><li >Create a task to use mysql_user module to add a user</li><br><li >Use host specific mysql user / password data</li><br><li >delegate_to should be used to execute on the first 'databases' server</li></ul><h6 >
+Objective: Add mysql users to a database for a set of hosts</h6>
+</section><section>
+<h2 >
+Sample Play</h2>
+<pre><code contenteditable >
+---
+- name: MySQL Users
+  hosts: webservers
+
+  tasks:
+    - name: add a mysql user for the server
+      mysql_user: name={{ db_username }} host={{ inventory_hostname }}
+                  password='{{ db_password }}' priv='ansible.*:ALL'
+                  state=present
+      delegate_to: databases[0]
+
+</pre></code>
+<p >
+When ran with -vvvv one can clearly see the connection debugging
+output which will show the delegation in action.
+</p>
+</section></section><section data-background='#007777' data-transition='rotate'>
+<section>
+<h1 >
+Jinja2 Templates Labs</h1>
+</section><section>
+<h2 >
+Lab</h2>
+<p >
+Create playbook and a jinja2 template to achieve the following results</p>
+<ul><br><li >Template out /etc/sysconfig/iptables</li><br><li >Only allow access to MySQL (tcp/3306) from servers in the webservers group</li><br><li >A play to create this file from the template</li><br><li >The play should have a handler to reload iptables when the file changes</li><br><li >iptables should be enabled and configured to start on boot</li></ul></section><section>
+<h2 >
+Sample template</h2>
+<pre><code contenteditable >
+*filter
+:INPUT ACCEPT [0:0]
+:FORWARD ACCEPT [0:0]
+:OUTPUT ACCEPT [0:0]
+
+{% for server in groups['webservers'] %}
+-A INPUT -p tcp -s {{ hostvars[server].ansible_eth1.ipv4.address }} -i eth1 -d {{ ansible_eth1.ipv4.address }} --dport 3306 -j ACCEPT
+{% endfor %}
+
+{% for server in groups['databases'] %}
+{% if server != inventory_hostname %}
+-A INPUT -p tcp -s {{ hostvars[server].ansible_eth1.ipv4.address }} -i eth1 -d {{ ansible_eth1.ipv4.address }} --dport 3306 -j ACCEPT
+{% endif %}
+{% endfor %}
+
+-A INPUT -m state --state ESTABLISHED,RELATED -j ACCEPT
+-A INPUT -p icmp -j ACCEPT
+-A INPUT -i lo -j ACCEPT
+-A INPUT -m state --state NEW -m tcp -p tcp --dport 22 -j ACCEPT
+-A INPUT -j REJECT --reject-with icmp-host-prohibited
+-A FORWARD -j REJECT --reject-with icmp-host-prohibited
+COMMIT
+
+</pre></code>
+</section><section>
+<h2 >
+Sample play</h2>
+<pre><code contenteditable >
+---
+- hosts: webservers
+  gather_facts: true
+
+- hosts: databases
+  handlers:
+    - name: Reload iptables
+      service: name=iptables state=reloaded
+
+  tasks:
+    - name: Template /etc/sysconfig/iptables
+      template: src=templates/iptables.j2 dest=/etc/sysconfig/iptables
+      notify: Reload iptables
+
+    - name: Ensure iptables is started and enabled
+      service: name=iptables state=started enabled=yes
+
+</pre></code>
+</section></section><section data-background='#007777' data-transition='rotate'>
+<section>
+<h1 >
+Assessment Questions</h1>
+<p><a href='http://bit.ly/ansible_advanced' >
+http://bit.ly/ansible_advanced
+</a></p>
+</section></section>
+
+                       </div>
+
+                </div>
+
+                <script src="lib/js/head.min.js"></script>
+                <script src="js/reveal.min.js"></script>
+
+                <script>
+
+                        // Full list of configuration options available here:
+                        // https://github.com/hakimel/reveal.js#configuration
+                        Reveal.initialize({
+                                controls: true,
+                                progress: true,
+                                history: true,
+                                center: true,
+
+                                theme: Reveal.getQueryHash().theme, // available themes are in /css/theme
+                                transition: Reveal.getQueryHash().transition || 'default', // default/cube/page/concave/zoom/linear/fade/none
+
+                                // Parallax scrolling
+                                // parallaxBackgroundImage: 'https://s3.amazonaws.com/hakim-static/reveal-js/reveal-parallax-1.jpg',
+                                // parallaxBackgroundSize: '2100px 900px',
+
+                                // Optional libraries used to extend on reveal.js
+                                dependencies: [
+                                        { src: 'lib/js/classList.js', condition: function() { return !document.body.classList; } },
+                                        { src: 'plugin/markdown/marked.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                                        { src: 'plugin/markdown/markdown.js', condition: function() { return !!document.querySelector( '[data-markdown]' ); } },
+                                        { src: 'plugin/highlight/highlight.js', async: true, callback: function() { hljs.initHighlightingOnLoad(); } },
+                                        { src: 'plugin/zoom-js/zoom.js', async: true, condition: function() { return !!document.body.classList; } },
+                                        { src: 'plugin/notes/notes.js', async: true, condition: function() { return !!document.body.classList; } }
+                                ]
+                        });
+
+                </script>
+
+        </body>
+</html>
+
+

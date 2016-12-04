@@ -1,0 +1,881 @@
+header:
+    author: Rackspace and Ansible
+    description: Ansible Operational
+    title: Ansible Operational
+slides:
+-   -   nested:
+        -   -   h1: Operational Ansible
+-   set_global:
+        background: '#007777'
+        transition: rotate
+-   -   nested:
+        -   -   h1: Installing Ansible
+            -   ul:
+                - Assessment Review
+                - Environment
+                - Installation
+            -   class_notes: Start with a brief overview of the Ansible assessment.
+                    Then orientation of users to the foundational information required
+                    to consume the course progressing directly into the Command Line
+                    Interface to begin installing Ansible.
+        -   -   h2: Assessment Review
+            -   ul:
+                - Brief review of the Ansible Fundamentals Assessment topics
+                - Q & A
+        -   -   h2: Environment
+            -   ul:
+                - Options exist on class environments to leverage
+                - Clouds (RAX, AWS, etc.)
+                - Vagrant
+                - Local machines (CentOS 6.4, Ubuntu LTS)
+                - directly from git checkout (running from source)
+            -   class_notes: Students will be introduced to the classroom lab environment.
+                    Explore deployment options and the ones that we will be utilizing
+                    in this classroom environment.
+        -   -   h2: Installation
+            -   ul:
+                - Getting Started
+                - Installation
+            -   link:
+                - http://docs.ansible.com/intro_getting_started.html
+                - http://docs.ansible.com/intro_getting_started.html
+            -   link:
+                - http://docs.ansible.com/intro_installation.html
+                - http://docs.ansible.com/intro_installation.html
+            -   link:
+                - http://releases.ansible.com/ansible/
+                - http://releases.ansible.com/ansible/
+            -   link:
+                - https://github.com/ansible/ansible/releases
+                - https://github.com/ansible/ansible/releases
+            -   class_notes: Given the chosen environment, install Ansible using best
+                    practices. The recommended installation method is using your operating
+                    systems package manager where applicable.
+-   -   nested:
+        -   -   h1: Inventory
+            -   p: Understand and discuss concepts around managing inventory through
+                    static INI formatted files or through dynamic inventory scripts
+        -   -   h2: Static INI
+            -   p: Create an INI inventory file based off of instructor provided servers,
+                    specifying a human readable name and a connection IP address or
+                    hostname
+            -   class_notes: We should use a human readable name as the inventory
+                    hostname, and specify ansible_ssh_host for the actual IP.  Ungrouped
+                    for now.
+        -   -   h2: Static INI
+            -   code: 'web1 ansible_ssh_host=10.10.10.10
+
+                    web2 ansible_ssh_host=20.20.20.20
+
+                    '
+        -   -   h2: Groups
+            -   p: Create a web group in the inventory file
+        -   -   h2: Groups
+            -   code: '[web]
+
+                    web1 ansible_ssh_host=10.10.10.10
+
+                    web2 ansible_ssh_host=20.20.20.20
+
+                    '
+        -   -   h2: Dynamic Inventory
+            -   p: What are the use cases for dynamic inventory scripts
+            -   ul:
+                - Limitations of a static inventory with a cloud like environment
+                - Query nearly any data source for inventory
+                - How ansible knows if the provided inventory is a script
+            -   class_notes: 'Using a static inventory file with a "living" cloud
+                    like environment is inefficient, error prone and difficult to
+                    maintain.
+
+
+                    Due to the nature of an inventory script, they can mostly leverage
+                    the full power of the language they are implemented in. This would
+                    enable the script to communicate with nearly any data source for
+                    use as inventory.
+
+
+                    Ansible determines if the provided inventory is a script, by checking
+                    if the file is executable.  If the file is not executable it is
+                    parsed as an INI file.
+
+                    '
+        -   -   h2: Dynamic Inventory Example
+            -   class_notes: Show the output of the dynamic inventory script of your
+                    choice
+        -   -   h2: Start a basic playbook
+            -   p: Create a playbook that only has a "hosts" specification targeting
+                    all servers and then run it
+            -   class_notes: '<pre><code>---
+
+                    hosts: all</code></pre>
+
+
+                    Students should see that the playbook runs an implicit fact gathering
+                    step, and should successfully communicate with all servers.
+
+                    '
+-   -   nested:
+        -   -   h1: Ansible Ad-Hoc Commands
+            -   h3: A Review of Hosts, Tasks, and Modules
+        -   -   h2: Targeting Hosts
+            -   ul:
+                - all / *
+                - Groups (webservers)
+                - Exclusion (webservers:!nginxservers)
+                - Intersection (webservers:&staging)
+                - Combos
+                - Hostname / IP
+                - Regex
+                - --limit
+            -   class_notes: "Go over the various methods for targeting hosts for\
+                    \ ad-hoc commands. \nInclude information on rolling release and\
+                    \ complex targeting.  Use \n'-i localhost,' for a quick way to\
+                    \ target a single host without \nspecifying an inventory file.\n"
+        -   -   h2: Executing a task
+            -   p: ad-hoc commands are single-task executions which leverage modules
+        -   -   h2: Modules
+            -   p: Modules are code that is executed on the remote host
+            -   class_notes: 'Discuss how ansible takes module code and bundles it
+                    with arguments,
+
+                    transfers it to the remote host and executes it (depending on
+
+                    connection method).
+
+                    '
+        -   -   h2: Modules
+            -   p: Ansible provided core modules are
+            -   ul:
+                - Written in python
+                - Are shipped by SSH to the target machine where they are executed
+                - Return JSON data that is interpreted by ansible
+            -   class_notes: Modules can be written in other languages, but core ansible
+                    only uses python. We don't need to go into the mechanics of how
+                    modules are built before being shipped, just mention that they
+                    get copied to the remote machine using SCP/SFTP. The echo out
+                    JSON data, which gets interpreted by the ansible "control" machine.
+        -   -   h2: Module Documentation
+            -   code: 'ansible-doc -l
+
+                    '
+            -   code: 'ansible-doc setup
+
+                    ansible-doc copy
+
+                    '
+            -   class_notes: "ansible-doc -l lists all the modules. ansible-doc <module-name>\
+                    \ \nto see the documentation for a specific module. The ansible-doc\
+                    \ \ncommand makes it extremely easy to see all of the available\
+                    \ ansible \nmodules with corresponding documentation and examples.\n"
+        -   -   h2: Example Use Cases
+            -   p: Rebooting all servers
+            -   code: 'ansible all -m command -a "/sbin/reboot"
+
+                    '
+            -   class_notes: 'This is a simple command that uses the command module
+                    to issue a reboot
+
+                    to all servers in your inventory.
+
+                    The -m dictates the module, the -a for arguments.
+
+                    '
+        -   -   h2: Example Use Cases
+            -   p: Setting fork level to 10
+            -   code: 'ansible webservers -f 10 -m setup
+
+                    '
+            -   class_notes: "Fork level means that Ansible will fork 10 times, and\
+                    \ then reach out\nto up to 10 machines concurrently.  Choose carefully\
+                    \ the level of concurrency:\nhigher concurrency executes tasks/plays/playbooks\
+                    \ faster, but results in more \nresources being consumed.  \n"
+        -   -   h2: Example Use Cases
+            -   p: Copy a file from the local host to inventory hosts
+            -   code: 'ansible dbservers -m copy -a "src=/path/to/file dest=/path/to/dest"
+
+                    '
+            -   class_notes: 'Uses the copy module to copy a file from the local machine,
+                    where the ansible
+
+                    command is being run, to the destination.
+
+                    '
+        -   -   h2: Example Use Cases
+            -   p: Install nginx and add a user
+            -   code: 'ansible all -m apt -a "pkg=nginx state=present"
+
+                    ansible all -m user -a "name=bob state=present"
+
+                    '
+            -   class_notes: 'Very simple; this uses the apt module to install nginx,
+                    and uses
+
+                    the user module to add user bob.
+
+                    '
+        -   -   h2: Example Use Cases
+            -   p: Cloning a git repo to a path
+            -   code: 'ansible appservers -m git -a "repo=https://github.com/ansible/ansible
+                    dest=/home/user/ansible"
+
+                    '
+            -   class_notes: "This is cloning a repo to a directory, optionally accepting\
+                    \ tags and versions.  Allows you\nto install software (or anything\
+                    \ stored in Git) from source control, a cornerstone \npiece of\
+                    \ functionality for any automation/config mgmt/orchestration tool.\n"
+        -   -   h2: Example Use Cases
+            -   p: Ensure httpd is started
+            -   code: 'ansible -m service -a "name=httpd state=started"
+
+                    '
+            -   class_notes: 'The service module is used to ensure httpd is started.  It
+                    does not restart, stop, reload
+
+                    or do anything but check that the process is running; if it is
+                    not running, it starts.
+
+                    '
+        -   -   h2: Example Use Cases
+            -   p: Backgrounding tasks, with optional polling every 60 seconds
+            -   code: 'ansible all -B 3600 -a "/usr/bin/long_running_operation --do-stuff"
+
+                    ansible all -B 1800 -P 60 -a "/usr/bin/long_running_operation
+                    --do-stuff"
+
+                    '
+            -   class_notes: 'Initiate long running tasks with polling.  Optionally
+                    kick off long running tasks
+
+                    with backgrounding and no polling, returning you to the shell,
+                    with the option of
+
+                    checking back in on the operation by setting -P to 0, which is
+                    otherwise a default of 15.
+
+                    '
+        -   -   h2: Example Use Cases
+            -   p: Running setup module to gather and display all facts about a machine
+                    known to Ansible
+            -   code: 'ansible web1.example.com -m setup
+
+                    '
+            -   class_notes: 'Gathers a very large JSON object''s worth of data about
+                    servers, to include
+
+                    network information, distro information, shell environment, devices,
+
+                    CPU, memory, etc.  All facts returned by setup are prefixed with
+                    ansible_
+
+                    '
+        -   -   h2: Cowsay
+            -   image: http://i.imgur.com/rRBp5Ln.png?1
+            -   class_notes: 'Cowsay is used by default if enabled on the system,
+                    but can be disabled
+
+                    permanently in the ansible.cfg file, or skill installation of
+                    cowsay.
+
+                    '
+        -   -   h2: Labs
+            -   h3: Using the 'ansible' command
+            -   ul:
+                - Install nginx and ensure that it is set to start at boot
+                - Ensure that nginx is started
+                - Create user www-data
+-   set_global:
+        background: '#007777'
+        transition: rotate
+-   -   nested:
+        -   -   h1: Ansible Orchestrated Commands
+            -   h3: A Review of Ansible Plays and Playbooks
+            -   class_notes: Students will walk through the process Ansible goes through
+                    to execute the desired jobs on targeted hosts when a Playbook
+                    gets run.
+        -   -   h2: Plays
+            -   p: An ordered series of tasks executed on a selection of hosts
+            -   p: With controls over how the tasks operate
+            -   code: "- name: This is a Play\n  hosts: web-servers\n  remote_user:\
+                    \ fred\n  sudo: yes\n  connection: ssh\n  gather_facts: no\n \
+                    \ vars:\n    http_port: 80\n    cache_dir: /opt/cache\n\n  tasks:\n\
+                    \    - name: create cache dir\n      file: path={{ cache_dir }}\
+                    \ state=directory\n\n    - name: install nginx\n      yum: name=nginx\
+                    \ state=installed\n"
+            -   class_notes: 'Discuss play controls such as sudo, remote_user, etc.
+
+                    Discuss variables. Show the list of tasks and how
+
+                    all finish one before going on to the next. Mention serial
+
+                    as a way to control how hosts flow through the tasks.
+
+                    Multiple plays can be written into a playbook.
+
+                    '
+        -   -   h2: Playbooks
+            -   p: ansible-playbook is the tool used to select
+            -   ul:
+                - an ordered set of plays
+                - an inventory
+                - global variables
+                - forks
+                - inventory limits
+        -   -   h2: Playbooks
+            -   h3: Execution
+            -   code: '$ ansible-playbook play.yaml -i pre-prod -e "cache_dir=/srv/cache/"
+                    -f 30 -l dfw
+
+                    '
+        -   -   h2: Handlers
+            -   h3: Actions triggered upon change
+-   -   nested:
+        -   -   h1: Variables
+            -   p: Understand the basics of variables, where they come from, how they
+                    get set, and how to evaluate and manipulate them
+        -   -   h2: Host Variables
+            -   p: Host variables are "facts" about a server that contains info such
+                    as
+            -   ul:
+                - Hostname
+                - IP addresses
+                - Date and Time information
+                - CPU, Disk, Memory
+                - Hardware Architecture
+                - Operating System Information
+            -   class_notes: For an example the students can run 'ansible all -i localhost,
+                    -c local -m setup'
+        -   -   h2: Host Variables
+            -   p: Where do they come from?
+            -   ul:
+                - inventory
+                - fact gathering (setup)
+                - host_vars directory
+        -   -   h2: Group Variables
+            -   p: '"facts" that apply to a grouping of servers'
+        -   -   h2: Group Variables
+            -   p: Where do they come from?
+            -   ul:
+                - inventory
+                - group_vars directory
+            -   p: ''
+            -   p: The name of the files in the group_vars directory line up with
+                    the group name being targeted. "all" is a special keyword to apply
+                    facts to all hosts.
+        -   -   h2: Variable Precedence
+            -   p: Precedence should simply feel natural
+            -   p: The most specific applied variable wins
+        -   -   h2: Using Variables in YAML
+            -   p: Ansible uses "mustache" like variable expansion
+            -   h4: group_vars/all
+            -   code: '---
+
+                    apache2_version: 2.2.22-1ubuntu1
+
+                    '
+            -   h4: Task
+            -   code: '- apt: name="apache2={{ apache2_version }}" state=present'
+        -   -   h2: Register
+            -   p: A special keyword "register" exists for all tasks, that will assign
+                    the output from a module to the variable of the specified name,
+                    for later manipulation or evaluation in use with other tasks
+            -   code: "- git: repo=git://github.com/ansible/ansible.git dest=/tmp/ansible\n\
+                    \  register: ansible_git\n"
+            -   class_notes: 'Different modules produce different data structures.
+                    For example, command and shell return a data structure containing
+                    the return code of the command, the contents of stderr and stdout,
+                    etc. The next section talks about how to explore the contents
+                    of a register variable.
+
+                    '
+        -   -   h2: Inspecting Variables
+            -   p: Different modules produce different data structures. The 'debug'
+                    module will help you inspect that data structure.
+            -   code: '- debug: var=ansible_git
+
+                    '
+            -   h4: Output Sample
+            -   code: "ok: [someserver] => {\n    \"ansible_git\": {\n        \"after\"\
+                    : \"1b4ba5431b1070c63b9069d310f42e16f302db10\",\n        \"before\"\
+                    : \"69b2d82be6ffe20f04070cddf11b7629aa8420e5\",\n        \"changed\"\
+                    : true,\n        \"invocation\": {\n            \"module_args\"\
+                    : \"repo=git://github.com/ansible/ansible.git dest=/tmp/ansible\"\
+                    ,\n            \"module_name\": \"git\"\n        }\n    }\n}\n"
+        -   -   h2: Module Output Structure
+            -   p: All modules should return a key titled "changed" with a boolean
+                    value of "true" or "false" defining whether the module made a
+                    change
+            -   p: Additionally, under a failure scenario, a module would set a key
+                    of "failed" with a boolean value of "true"
+            -   class_notes: A failed module may not have a changed key
+        -   -   h2: Dynamically Adding Host Facts
+            -   p: During runtime you can run add additional host vars using the "set_fact"
+                    module
+            -   code: "- local_action:\n    module: wait_for\n    host: \"{{ ansible_default_ipv4.address\
+                    \ }}\"\n    port: 22\n    delay: 1\n    timeout: 1\n  register:\
+                    \ port_test\n  failed_when: False\n\n- set_fact: ansible_ssh_port=2222\n\
+                    \  when: port_test|failed\n"
+            -   class_notes: This example uses the wait_for module to attempt communication
+                    with port 22 on the remote host via a local action. Don't fail
+                    if wait_for fails, and if wait_for fails, set ansible_ssh_port
+                    to port 2222 for future communciation with the server.
+        -   -   h2: Magic Variables
+            -   p: There are several standard variables that are created and exposed
+                    by ansible
+            -   ul:
+                - inventory_dir
+                - inventory_hostname
+                - inventory_hostname_short
+                - inventory_file
+                - playbook_dir
+                - play_hosts
+                - hostvars
+                - groups
+                - group_names
+                - ansible_ssh_user
+            -   class_notes: 'play_hosts is new to 1.5, there is also ''vars'' and
+                    ''environment'' but are not widely used or discussed
+
+                    http://docs.ansible.com/playbooks_variables.html#magic-variables-and-how-to-access-information-about-other-hosts
+
+                    '
+-   -   nested:
+        -   -   h1: Variable Inclusion
+            -   h3: How to properly use include_vars and vars_files to include variables
+                    in your playbooks
+        -   -   h2: vars_files
+            -   p: vars_files is used in playbooks to include a file of variables
+                    outside of the usual variable locations
+            -   ul:
+                - Useful for keeping secrets and site specific data outside of your
+                    Ansible repository and version control
+                - Not available for usage within roles, for that you will need the
+                    include_vars module
+            -   class_notes: The vars_files directive is useful because it allows
+                    for you to keep secrets and business specific data in a location
+                    outside your Ansible repository.  This allows you to keep your
+                    Ansible playbooks very generic and portable.  This means you can
+                    continue to benefit from changes upstream if it is a community
+                    contributed playbook, or you can safely push out updates to the
+                    playbook if you are contributing it to the community.  Ultimately
+                    the variable include mechanisms are to provide flexibility in
+                    where your variables are located.
+        -   -   h2: include_vars
+            -   p: The include_vars module is similar to vars_files and allows for
+                    dynamic inclusion of variables within the context of a role.
+            -   ul:
+                - '<strong>include variables based on the target Linux Distribution</strong><br>
+
+                    include_vars: "../vars/{{ansible_os_family}}.yml"
+
+                    '
+                - '<strong>include a directory of variable fragments</strong><br>
+
+                    include_vars: "{{ item }}.yml"<br>
+
+                    with_fileglob: "../vars/*.yml"
+
+                    '
+            -   class_notes: The include_vars module is very similar to vars_files,
+                    however include_vars is a module which means it can be used within
+                    the context of a role, whereas vars_files cannot.  Some example
+                    use cases of include_vars are shown here, in the first example
+                    include_vars is used to pull in variables based upon the Linux
+                    distribution in use.  In the second example include_vars is being
+                    used to collect a series of variables files from a directory.  Don't
+                    think of these as the "correct" ways to handle variables, but
+                    rather as yet another tool at your disposal for flexibility when
+                    needed.
+-   -   nested:
+        -   -   h1: Task Control
+            -   ul:
+                - 'Conditionals: when'
+                - 'Loops: with_items, etc'
+                - 'Task status: failed_when, changed_when'
+                - Local actions and delegation
+        -   -   h2: Conditionals
+            -   h3: Useful for
+            -   ul:
+                - Acting on results of previous tasks
+                - Handling cross-distro/env differences
+        -   -   h2: An Example
+            -   code: "- name: do something only on RedHat-style systems\n  command:\
+                    \ mycommand\n  when: ansible_os_family == \"RedHat\"\n"
+            -   class_notes: The when keyword, when applied to a task, can control
+                    execution of that task and skip it when certain conditions are
+                    set. Any variable can be used in a "when" condition, including
+                    register variables, facts, and group/host vars. Some particularly
+                    useful uses of this include skipping tasks based on the results
+                    of previous tasks, and handling cross-distro differences in package
+                    names/managers.
+        -   -   h2: Loops
+            -   h3: 'with_items: Loops over a list, one task per item'
+            -   class_notes: 'Tasks can loop over lists using the with_items keyword.
+                    Each item in the list will be treated as a separate task, and
+                    you can use the special item variable name to access the current
+                    item. (Note: apt/yum modules collapse a list into a single package
+                    management transaction for speed)
+
+                    There are some other looping keywords, too. See http://docs.ansible.com/playbooks_loops.html
+                    for more.
+
+                    Class question: when would you need to use some of the other loop
+                    keywords, like with_together, with_sequence,with_random_choice,
+                    etc?'
+        -   -   h2: Status Control
+            -   ul:
+                - failed_when
+                - changed_when
+            -   class_notes: 'Ansible tasks can return a few different states: "OK"
+                    means that the task completed successfully but didn''/.t change
+                    anything on the target system. "Changed" means that the task completed,
+                    and changed something. "Failed" means that the task failed. (duh)
+
+                    When you''re using "command" or "shell" to issue commands on the
+                    remote system, Ansible will detect the return code of the command.
+                    If it''s non-zero, Ansible will treat it as a failure, but sometimes
+                    that''s not what you want. There may be other circumstances with
+                    other modules where you see a change or a failure but want to
+                    continue on, or mark that task as just "ok", with no change. There
+                    are two keywords to control this. failed_when and changed_when.
+                    These work like the "when" keyword, but control the status of
+                    the task. For instance.
+
+                    - name: this command prints FAILED when it fails command: /usr/bin/example-command
+                    -x -y -z register: command_result failed_when: "''FAILED'' in
+                    command_result.stderr" This will treat the command as a failure
+                    only when the string "FAILED" exists in the stderr of the command
+                    output.
+
+                    Some examples of changed_when:
+
+                    - shell: /usr/bin/billybass --mode="take me to the river" register:
+                    bass_result changed_when: "bass_result.rc != 2"
+
+                    # this will never report ''changed'' status - shell: wall beep
+                    changed_when: False '
+        -   -   h2: Local actions
+            -   ul:
+                - local_action (task)
+                - 'connection: local (play)'
+            -   class_notes: 'Most Ansible tasks (actions) run on a remote machine:
+                    a Python program is assembled and sent across to the remote server,
+                    run, and the response is returned. But for some tasks, like API
+                    calls to remote services, it doesn''t make sense to run that task
+                    on a remote machine--this is what local actions are for. This
+                    runs the task locally on the Ansible machine, but still "on behalf"
+                    of the machine currently being operated upon.'
+        -   -   h2: Delegation
+            -   p: Run a task on another server, on <i>behalf</i> of the server we
+                    are currently operating on.
+            -   class_notes: A delegated task is similar. You can be running a play
+                    that operates upon, say, "webservers", but for a particular task
+                    within that play, run the action on a different server. As an
+                    example, you may be going through an app deployment on the webservers
+                    group, but you may need to contact the monitoring server to turn
+                    off monitoring for that host while it's being updated. So, you
+                    would want to delegate_to a different server, in a play ordinarily
+                    targeting webservers.
+-   -   nested:
+        -   -   h1: Best Practices
+            -   ul:
+                - content organization
+                - version control
+                - role based access control
+                - platform variance in playbooks
+                - proper naming of plays, tasks, and handlers
+                - playbook formatting
+            -   class_notes: 'Best practices are not just conformity for conformity
+                    sake.
+
+                    They will help simplify code, smooth out collaboration, and
+
+                    avoid gotchas.
+
+                    '
+        -   -   h2: Content Organization
+            -   p: Magic happens when you put your files in the right locations
+            -   ul:
+                - ansible.cfg
+                - inventory
+                - variables and inclusions
+                - tasks
+                - handlers
+                - playbooks
+                - templates and files for use in tasks
+                - custom modules
+                - roles
+            -   class_notes: 'Ansible looks in ANSIBLE_CONFIG, ./ansible.cfg, ./.ansible.cfg
+
+                    and /etc/ansible/ansible.cfg in that order. (1.5 switched
+
+                    ANSIBLE_CONFIG and ./ansible.cfg order)
+
+                    Inventory is looked for in config directive, ANSIBLE_HOSTS,
+
+                    /etc/ansible/hosts in that order.
+
+                    host_vars / group_vars relative to inventory and playbook
+
+                    basedirs
+
+                    file inclusions are relative to the playbook (vars, tasks,
+
+                    handlers, playbooks, templates, etc...)
+
+                    Custom modules go in library/ relative to playbook
+
+                    roles are in roles/ relative to playbook, and have
+
+                    files, templates, tasks, handlers, vars, meta all relative
+
+                    to the role itself, making for portability.
+
+                    '
+        -   -   h2: Version Control
+            -   p: Version control and Ansible go hand in hand. This topic will walk
+                    through many of the benefits of storing your ansible content in
+                    SCM and why this is itself a best practice.
+        -   -   h2: Version Control
+            -   h3: audit trail / RBAC
+            -   class_notes: 'Version control provides a record of who changed what,
+                    when, and
+
+                    why, the audit trail. It can also be a part of RBAC strategy,
+
+                    providing a gateway to who can commit to the playbook content.
+
+                    '
+        -   -   h2: Version Control
+            -   h3: collaboration and preservation
+            -   class_notes: 'A centralized (or distributed) store of the content
+                    protects
+
+                    against localized disaster. It also allows for better collaboration
+
+                    than just passing files back and forth, or co-editing a single
+
+                    directory.
+
+                    '
+        -   -   h2: Version Control
+            -   h3: DevOps tie-in
+            -   class_notes: DevOps best practices dictate code to be deployed is
+                    already in SCM, natural extension to put code that does the deploying
+                    in SCM as well
+        -   -   h2: Version Control
+            -   h3: Galaxy, Git, and You!
+            -   ul:
+                - role sharing
+                - joys of modular playbooks
+                - deploying code with the git module in a role
+            -   class_notes: GALAXY!
+        -   -   h2: Version Control
+            -   h3: Sensitive information handling
+            -   class_notes: VAULT!
+        -   -   h2: Version Control
+            -   h3: Barriers to entry
+            -   ul:
+                - pull requests
+                - automatic gateway tests
+                - local validation checks
+            -   class_notes: 'All these things can work together to add quality assurance
+                    to your
+
+                    content. Using pull or change requests gives a human the
+
+                    opportunity to review. Automated tests can tie into them, or be
+
+                    ran post-commit to continuously validate. Localized hooks can
+                    be
+
+                    used to validate after pulling changes in.
+
+                    '
+        -   -   h2: RBAC and execution model
+            -   p: A discussion of RBAC, Ansible, and your team, as well as a comparison
+                    of execution stratagies
+        -   -   h2: RBAC and execution model
+            -   h3: RBAC
+            -   class_notes: 'Role Based Access Control is used in many organizations
+
+                    to seperate out who has access to do what within environments.
+
+                    Often required for parts of public companies.  Sometimes at
+
+                    odds with DevOps philosophy of self-service.
+
+                    '
+        -   -   h2: RBAC and execution model
+            -   h3: Execution models
+            -   ul:
+                - centralized
+                - distributed
+            -   class_notes: A comparison and contrast of centralized and distributed
+                    execution models. Not to be confused with push and pull.
+        -   -   h2: RBAC and execution model
+            -   h3: Centralized
+            -   ul:
+                - access defined by company standards
+                - layer of protection against accidents and malice
+                - repeatability and guaranteed working environment
+                - ITIL/Change Control process friendly
+            -   class_notes: 'A single point from which to either push changes from,
+                    or
+
+                    have ansible-pull fetch changes from. Can configure systems to
+
+                    only allow Ansible logins from this host with a particular key
+
+                    Host can be locked down and managed to ensure unwanted changes
+
+                    don''t creep in and disrupt ability to do repeat runs
+
+                    '
+        -   -   h2: RBAC and execution model
+            -   h3: Distributed
+            -   ul:
+                - rapid development and execution loop
+                - change control put in hands of playbook/code devs
+                - turns operational support from gatekeeping to enabling
+                - aligns with other self-service IT services
+                - you built it, you deploy it
+            -   class_notes: 'Each developer could be a distributor, or individual
+
+                    systems could point to individual sources for ansible-pull
+
+                    Higher security risk, higher risk of run environment change
+
+                    but tradeoff for more flexibility and rapid dev/deploy times
+
+                    '
+        -   -   h2: Platform Variance in playbooks
+            -   p: Best practices for dealing with the challenge of heterogeneous
+                    environments
+        -   -   h2: Platform Variance in playbooks
+            -   h3: group_by
+            -   p: Create dyanmic groups matching certain criteria
+            -   code: "- name: grouping play\n  hosts: all\n  tasks:\n     - name:\
+                    \ create distro groups\n       group_by: key={{ ansible_distribution\
+                    \ }}\n\n- name: CentOS play\n  hosts: CentOS\n  gather_facts:\
+                    \ False\n  tasks:\n     - # tasks that only happen on CentOS go\
+                    \ here\n"
+            -   class_notes: Note that roles could also be used here, driven by group_by.
+        -   -   h2: Platform Variance in playbooks
+            -   h3: task conditionals
+            -   code: "- name: install nginx\n  yum: name=nginx state=present\n  when:\
+                    \ ansible_distribution == 'CentOS'\n\n- name: install nginx\n\
+                    \  apt: pkg=nginx state=present\n  when: ansible_distribution\
+                    \ == 'Debian'\n"
+            -   class_notes: A more simple way to deal, could clutter up a large playbook
+                    / role set.
+        -   -   h2: Proper naming of plays, tasks, and handlers
+            -   p: Names have significance
+            -   ul:
+                - --start-at-task
+                - handler notification
+                - output review
+            -   code: "$ ansible-playbook play.yaml --start-at-task=\"a good task\"\
+                    \n\n  - name: a good task\n    file: path=/etc/foobar state=absent\n\
+                    \    notify: bounce foo service\n\nhandlers:\n  - name: bounce\
+                    \ foo service\n    service: name=foo state=restarted\n"
+            -   class_notes: 'Names have meaning. task names in --start-at-task,
+
+                    handler names for notify. Play names are less important
+
+                    but uniqueness helps when debugging output
+
+                    '
+        -   -   h2: Playbook formatting
+            -   p: whitespace, yaml, line lengths, oh my!
+        -   -   h2: Playbook formatting
+            -   h3: order and style of playbook directives
+            -   ul:
+                - use a name
+                - hosts next
+                - other options
+                - tags
+                - vars after a blank line
+                - tasks after a blank line
+            -   code: "- name: Generate env/cell specific content\n  hosts: localhost\n\
+                    \  connection: local\n  gather_facts: false\n  tags:\n    - localprep\n\
+                    \n  vars:\n    - cachedir: cache/\n\n  tasks:\n    - name: stuff\n"
+            -   class_notes: 'There is no hard order that things must appear in a
+                    playbook,
+
+                    however if anybody ever looks at your files they will expect
+
+                    an order. Blank lines help to visually separate logical blocks
+
+                    of the play and between plays.
+
+                    '
+        -   -   h2: Playbook formatting
+            -   h3: whitespace, line lengths, continuations
+            -   ul:
+                - blank lines encouraged
+                - less than 80 chars wide
+                - blocks can continue on new lines with proper spacing
+            -   code: "tasks:\n  - name: one task\n    command: echo\n\n  - name:\
+                    \ lots of arguments\n    rax_dns_record: credentials=/path/to/my/creds\
+                    \ type=A\n                    data=4.2.2.2 name=www.nodomain.not\n"
+            -   class_notes: 'Playbook syntax is friendly to line continuation, make
+                    use of that
+
+                    to keep your lines under 80 chars. Wrap the text to be at the
+                    same
+
+                    indent level as the preceeding data block, as seen in the example
+
+                    '
+        -   -   h2: Playbook formatting
+            -   h3: to quote or not to quote
+            -   ul:
+                - 'quote strings that have a : in them'
+                - 'quote variables if they come directly after a :'
+                - 'quote strings that use * directly after a :'
+                - quote entire string if first character is a quote
+            -   code: "- name: \"My name has a : in it\"\n  command: \"{{ variable_here\
+                    \ }}\"\n  when: \"'some_string' in varaible_here\"\n\nhosts: \"\
+                    *-webs\"\n"
+            -   class_notes: 'quoting is a yaml gotcha. It often trips people up.
+                    These
+
+                    rules here will help you avoid most/all quoting gotchas.
+
+                    '
+        -   -   h2: Playbook formatting
+            -   h3: variable referencing
+            -   ul:
+                - use {{ }} almost always
+                - do not use {{ }} in conditionals and other task controllers
+            -   code: "- name: name here\n  command: echo {{ variable here }}\n  register:\
+                    \ output\n  when: variable != \"derp\"\n  failed_when: output.stderr\
+                    \ == \"FAILURE\"\n"
+            -   class_notes: 'Variable decoration is another gotcha. Task controllers
+                    can be
+
+                    treated like lines of python, where variables are referenced
+
+                    without decoration and raw strings need quotes.
+
+                    '
+        -   -   h2: Playbook formatting
+            -   h3: YAML gotchas
+            -   ul:
+                - 'Booleans: /^(y|yes|n|no|true|false|on|off)$/i
+
+                    '
+            -   class_notes: 'Assume the scenario where you are configuring sshd_config,
+                    and you create a variable to disable root login via "PermitRootLogin:
+                    no". In this case ''no'', evaluates to the boolean False, so you
+                    end up literally inserting "PermitRootLogin False" in your config
+                    file. To use ''no'' as a string literal it must be quoted such
+                    as "PermitRootLogin: ''no''".
+
+                    '
+        -   -   image: http://cdn2.hubspot.net/hub/330046/file-449187601-png/ansible_badge.png
+            -   link:
+                - ansible.com
+                - http://www.ansible.com
+
